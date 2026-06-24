@@ -119,12 +119,12 @@ function rrSegs(jobs, q){ // jobs:[{n,dur,color}], returns segs[], plus switches
   function render(){ const q=+q1.value; const {segs}=rrSegs(jobs,q); const switches=Math.max(0,segs.length-1);
     let html=OS.gantt({W:460,H:96,segs,tmax:18,title:`시간 조각 = ${q}  ·  문맥 전환 ${switches}회`});
     let note;
-    if(q>=5){ note='조각이 큼 → 한 작업이 오래 붙잡아 거의 <b style="color:var(--hot)">FCFS처럼</b>. 반응이 둔해요.'; }
+    if(q>=6){ note='조각이 작업 길이만큼 커짐 → 전환이 사라져 사실상 <b style="color:var(--hot)">FCFS</b>. 반응이 둔해요.'; }
     else if(q<=1){ note='조각이 아주 작음 → 교대가 잦아 <b style="color:var(--dead)">전환 오버헤드</b>가 쌓여요(일보다 바꿔치기가 잦음).'; }
     else { note='적당한 조각 → 반응성도 좋고 전환 낭비도 적은 <b style="color:var(--good)">균형점</b>.'; }
     html+=`<div style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--muted)">교대(문맥 전환)가 잦을수록 그만큼 일 못 하는 시간이 늘어요.</div>`;
     document.getElementById('s1').innerHTML=html;
-    q1v.textContent = q>=5?'너무 큼(FCFS화)':q<=1?'너무 작음(전환↑)':'적당';
+    q1v.textContent = q>=6?'너무 큼(FCFS화)':q<=1?'너무 작음(전환↑)':'적당';
     document.getElementById('lab1').innerHTML=note;
   }
   q1.addEventListener('input',render); render();

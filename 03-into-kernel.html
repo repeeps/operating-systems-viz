@@ -139,7 +139,7 @@ const OS=VZ.OS;
   const play=document.getElementById('play2');
   play.innerHTML=`<button class="btn" id="prev2">◀ 이전</button><button class="btn" id="next2">다음 ▶</button><span class="note" id="cnt2" style="margin-left:8px"></span>`;
   function render(){ const W=460,H=200; const st=steps[i]; let inner='';
-    inner+=OS.proc(40,32,{label:'앱',state:st.hl===3?'run':'wait',w:64,h:36});
+    inner+=OS.proc(40,32,{label:'앱',state:st.hl===3?'run':'wait',w:64,h:42,sub:st.hl===3?'재개':'유저코드 멈춤'});
     // bit indicator
     const inK=st.hl===0||st.hl===1||st.hl===2;
     inner+=`<text x="${W/2}" y="22" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--muted)">모드: <tspan fill="${inK?'var(--v)':'var(--q)'}" font-weight="700">${inK?'커널':'유저'}</tspan></text>`;

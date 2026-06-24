@@ -58,7 +58,7 @@
   <section class="panel" data-panel="2">
     <span class="kicker" style="color:var(--hot)">Step 02 — Keep It Close</span>
     <h2>한 파일은 되도록 가까이</h2>
-    <p class="lead">한 파일의 블록이 디스크 <b>여기저기 흩어지면</b>(단편화), 읽을 때마다 멀리 건너뛰어 느려져요. 그래서 OS는 한 파일의 블록과, 같은 폴더의 파일들을 되도록 <b>가까운 곳에 모아</b> 두려 해요. 토글로 모인 배치와 흩어진 배치의 읽기 비용을 비교하세요. 이건 메모리의 지역성과 같은 정신 — 함께 쓸 것을 가까이 두면 빠르다.</p>
+    <p class="lead">한 파일의 블록이 디스크 <b>여기저기 흩어지면</b>(단편화), 읽을 때마다 멀리 건너뛰어 느려져요(특히 헤드가 물리적으로 움직이는 <b>회전식 디스크</b>에서). 그래서 OS는 한 파일의 블록과, 같은 폴더의 파일들을 되도록 <b>가까운 곳에 모아</b> 두려 해요. 토글로 모인 배치와 흩어진 배치의 읽기 비용을 비교하세요. 이건 메모리의 지역성과 같은 정신 — 함께 쓸 것을 가까이 두면 빠르다.</p>
     <div class="toggles" id="layTog">
       <button data-v="close" class="on">가까이 모음</button>
       <button data-v="frag">흩어짐(단편화)</button>

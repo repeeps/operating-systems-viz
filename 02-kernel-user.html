@@ -54,7 +54,7 @@
     </div>
     <div class="scene" id="s1"></div>
     <p class="big" id="lab1"></p>
-    <p class="note" style="margin-top:6px">→ 위험한 명령은 유저 모드에서 차단·커널로 trap. 사고의 격리.</p>
+    <p class="note" style="margin-top:6px">→ 위험한 명령은 유저 모드에서 차단·커널이 가로챔. 사고의 격리.</p>
   </section>
 
   <!-- STEP 2 -->
@@ -75,7 +75,7 @@
   <section class="panel" data-panel="3">
     <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
     <h2>정리</h2>
-    <p class="lead">CPU의 <b>모드 비트</b>가 유저/커널을 가르고, 유저 모드에선 위험한 명령이 막혀요(어기면 커널로 trap). 비트를 바꾸는 권한도 커널만 가져 벽이 견고하죠. 그렇다면 — 앱이 정말로 디스크를 읽거나 메모리를 더 받아야 할 땐(정당한 위험한 일) 어떻게 하죠? 벽을 무너뜨리지 않고 커널에 부탁하는 <b>정해진 문</b>이 있어요. 다음 챕터.</p>
+    <p class="lead">CPU의 <b>모드 비트</b>가 유저/커널을 가르고, 유저 모드에선 위험한 명령이 막혀요(어기면 커널이 가로챔). 비트를 바꾸는 권한도 커널만 가져 벽이 견고하죠. 그렇다면 — 앱이 정말로 디스크를 읽거나 메모리를 더 받아야 할 땐(정당한 위험한 일) 어떻게 하죠? 벽을 무너뜨리지 않고 커널에 부탁하는 <b>정해진 문</b>이 있어요. 다음 챕터.</p>
     <div class="scene" id="s3"></div>
     <p class="big" id="lab3"></p>
     <p class="note" style="margin-top:14px">→ 다음 → <a href="03-into-kernel.html" style="color:var(--q);font-weight:700">CH 03 · 커널로 들어가는 세 문</a></p>
@@ -116,9 +116,9 @@ const OS=VZ.OS;
       // attempt heads DOWN toward the wall, gets blocked ON the wall line (y=100)
       inner+=OS.arrow(230,60,230,92,{color:'var(--dead)',lw:1.8});
       inner+=`<line x1="200" y1="100" x2="260" y2="100" stroke="var(--dead)" stroke-width="3.5"/>`;
-      inner+=`<text x="230" y="90" text-anchor="middle" font-size="15" font-weight="700" fill="var(--dead)">✕</text>`;
+      inner+=`<text x="248" y="104" text-anchor="middle" font-size="15" font-weight="700" fill="var(--dead)">✕</text>`;
       inner+=`<text x="300" y="100" font-size="11" font-family="monospace" fill="var(--dead)">벽에 막힘</text>`;
-      inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">CPU가 차단 → 커널로 trap (보통 강제 종료)</text>`;
+      inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">CPU가 차단 → 커널이 가로챔 (보통 강제 종료)</text>`;
       document.getElementById('lab1').innerHTML='<b style="color:var(--dead)">위험한 일</b>: 하드웨어 직접 제어·남의 메모리 접근은 유저 모드에서 <b>차단</b>되고 커널로 넘어가요 — 사고가 그 앱 안에 갇혀요.';
     }
     document.getElementById('s1').innerHTML=OS.boundary({W,H,midY:100,inner});

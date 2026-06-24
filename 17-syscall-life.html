@@ -124,7 +124,6 @@ function sceneFor(active){ const W=460,H=200; let inner='';
   const flow=['앱 요청','시스템콜','파일 조회','디스크','대기·전환','인터럽트','복귀'];
   flow.forEach((f,i)=>{ const x=20+ (i%4)*112; const y= i<4?40:110;
     s+=OS.chip(x+50,y,f,{color: i===4?'var(--hot)':(i===5?'var(--dead)':'var(--q)'),minW:96,h:30});
-    if(i<flow.length-1){ const sameRow=(i+1)%4!==0; }
   });
   // arrows row1
   for(let i=0;i<3;i++){ s+=OS.arrow(20+i*112+100,40,20+(i+1)*112,40,{color:'var(--slate)',lw:1.2}); }

@@ -62,7 +62,7 @@
 
   <div class="seclabel">PART C · <b>메모리 가상화</b> — 메모리의 마법</div>
   <div class="cards">
-    <a class="ccard" href="09-why-virtual.html"><div class="num">09</div><h3>왜 가상 주소</h3><p>두 가지 일을 해요 — 서로 못 침범하게 격리, 그리고 "각자 큰 개인 메모리"라는 착각.</p><div class="chips"><span class="chip">isolation</span></div></a>
+    <a class="ccard" href="09-why-virtual.html"><div class="num">09</div><h3>왜 가상 메모리</h3><p>두 가지 일을 해요 — 서로 못 침범하게 격리, 그리고 "각자 큰 개인 메모리"라는 착각.</p><div class="chips"><span class="chip">isolation</span></div></a>
     <a class="ccard" href="10-paging.html"><div class="num">10</div><h3>페이징</h3><p>메모리를 페이지로 쪼개고, 페이지 테이블이 가상 페이지→물리 프레임을 매핑. 권한 비트도.</p><div class="chips"><span class="chip">page table</span></div></a>
     <a class="ccard" href="11-tlb.html"><div class="num">11</div><h3>TLB</h3><p>매 접근마다 테이블을 보면 느려요 → 최근 변환을 캐시. 지역성 덕에 거의 대부분 적중.</p><div class="chips"><span class="chip">TLB</span><span class="chip">cache</span></div></a>
     <a class="ccard" href="12-demand-paging.html"><div class="num">12</div><h3>요구 페이징 · 페이지 폴트</h3><p>필요할 때만 메모리에 올려요. 없으면 폴트 → 디스크에서 가져오기. RAM보다 큰 착각의 비밀.</p><div class="chips"><span class="chip">page fault</span></div></a>
@@ -71,7 +71,7 @@
 
   <div class="seclabel">PART D · 파일과 저장 (영속성)</div>
   <div class="cards">
-    <a class="ccard" href="14-file-inode.html"><div class="num">14</div><h3>파일과 inode</h3><p>파일 = 바이트 묶음 + 메타데이터(inode). 이름은 디렉터리가 매핑 — 저장의 가상화.</p><div class="chips"><span class="chip">inode</span></div></a>
+    <a class="ccard" href="14-file-inode.html"><div class="num">14</div><h3>파일과 아이노드</h3><p>파일 = 바이트 묶음 + 메타데이터(아이노드). 이름은 디렉터리가 매핑 — 저장의 가상화.</p><div class="chips"><span class="chip">inode</span></div></a>
     <a class="ccard" href="15-disk-layout.html"><div class="num">15</div><h3>디스크 위의 살림 배치</h3><p>디스크를 구역(안내판·가용 지도·아이노드·데이터)으로 나누고, 빈 칸은 지도로 추적하며, 한 파일은 가까이 모아요.</p><div class="chips"><span class="chip">layout</span><span class="chip">locality</span></div></a>
     <a class="ccard" href="16-io-interrupt.html"><div class="num">16</div><h3>I/O와 인터럽트</h3><p>느린 장치를 기다리며 CPU를 낭비하지 않아요 — 바쁜 대기 대신 인터럽트로 "다 됐다" 알림.</p><div class="chips"><span class="chip">interrupt</span><span class="chip">I/O</span></div></a>
   </div>

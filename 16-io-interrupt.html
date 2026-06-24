@@ -116,7 +116,7 @@ const OS=VZ.OS;
     let segs, title, useful;
     if(view==='irq'){
       segs=[{label:'요청',dur:1,color:'var(--q)'},{label:'다른 프로세스 실행',dur:8,color:'var(--good)'},{label:'완료 알림→챙김',dur:1,color:'var(--v)'}];
-      title='인터럽트 — CPU 타임라인'; useful=9;
+      title='인터럽트 — CPU 타임라인'; useful=10;
     } else {
       segs=[{label:'요청',dur:1,color:'var(--q)'},{label:'기다림(낭비)',dur:8,color:'var(--dead)'},{label:'결과',dur:1,color:'var(--good)'}];
       title='폴링 — CPU 타임라인'; useful=2;
