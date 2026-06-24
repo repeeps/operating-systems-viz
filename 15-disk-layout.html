@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15 · 디스크 위의 살림 배치 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--blue)">PART D · 파일과 저장 — CH 15</div>
+    <h1>디스크 위의 살림 배치</h1>
+    <p class="intro">아이노드 같은 장부와 실제 내용은 디스크 어디에 둘까요? 디스크를 무작정 쓰면 금세 엉키니, OS는 시작부터 구역을 나눠요 — 어디에 뭐가 있는지 알려주는 <b>안내판</b>, 빈 블록을 추적하는 <b>가용 지도</b>, 아이노드를 모아둔 <b>아이노드 영역</b>, 실제 내용이 들어가는 <b>데이터 영역</b>. 또 한 파일의 블록들을 되도록 <b>가까이</b> 두려 애써요. 디스크는 멀리 흩어진 걸 읽을수록 느려지거든요(지역성이 저장에서도 통해요).</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 구역 나누기</button>
+    <button data-s="1">01 · 빈 칸 찾기</button>
+    <button data-s="2">02 · 가까이 모으기</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--blue)">Step 00 — Carve Into Regions</span>
+    <h2>디스크를 구역으로</h2>
+    <p class="lead">OS는 디스크를 포맷할 때 앞쪽 일부를 살림용으로 떼어 둬요. <b>안내판</b>(전체 구조·크기 정보)이 맨 앞, 이어 <b>가용 지도</b>(어느 블록이 비었나), <b>아이노드 영역</b>(파일들의 장부 모음), 그리고 가장 큰 <b>데이터 영역</b>(실제 내용). 컴퓨터를 켜면 OS는 안내판부터 읽어 "이 디스크는 이렇게 생겼구나"를 파악하고 살림을 시작해요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 안내판·가용지도·아이노드 영역·데이터 영역. 켤 때 안내판부터 읽음.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Finding Free Space</span>
+    <h2>빈 블록은 지도로 추적</h2>
+    <p class="lead">새 파일을 쓰려면 <b>빈 블록</b>을 찾아야죠. 매번 디스크 전체를 뒤지면 느리니, <b>가용 지도</b>가 블록마다 "사용 중/빔"을 한 칸씩 표시해 둬요. 블록을 쓰면 그 칸을 "사용 중"으로, 파일을 지우면 "빔"으로 되돌리죠. 버튼으로 파일을 쓰고 지우며 지도가 갱신되는 걸 보세요. (파일 삭제가 빠른 이유 — 내용을 지우는 게 아니라 지도에서 "빔"으로 표시만 하거든요.)</p>
+    <div class="ctl" id="play1"></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 가용 지도 = 블록별 사용/빔 표. 삭제는 "빔" 표시일 뿐(그래서 빠름).</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — Keep It Close</span>
+    <h2>한 파일은 되도록 가까이</h2>
+    <p class="lead">한 파일의 블록이 디스크 <b>여기저기 흩어지면</b>(단편화), 읽을 때마다 멀리 건너뛰어 느려져요. 그래서 OS는 한 파일의 블록과, 같은 폴더의 파일들을 되도록 <b>가까운 곳에 모아</b> 두려 해요. 토글로 모인 배치와 흩어진 배치의 읽기 비용을 비교하세요. 이건 메모리의 지역성과 같은 정신 — 함께 쓸 것을 가까이 두면 빠르다.</p>
+    <div class="toggles" id="layTog">
+      <button data-v="close" class="on">가까이 모음</button>
+      <button data-v="frag">흩어짐(단편화)</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 모으면 빠르고 흩어지면 느림. 저장에서의 지역성.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">디스크는 <b>안내판·가용지도·아이노드 영역·데이터 영역</b>으로 나뉘어 살림이 돼요. 빈 칸은 가용 지도로 추적하고(삭제는 "빔" 표시일 뿐), 한 파일의 블록은 되도록 가까이 모아 빠르게 읽죠. 여기까지 "데이터가 디스크 어디에 어떻게 놓이나"를 봤어요. 마지막 한 조각 — CPU는 그 느린 디스크와 <b>실제로 어떻게 대화</b>할까요? 읽기를 시켜놓고 멍하니 기다리면 시간 낭비일 텐데요. 다음 챕터.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="16-io-interrupt.html" style="color:var(--q);font-weight:700">CH 16 · 느린 장치와 대화하기</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '15 · 디스크 배치');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=160; let s='';
+  const regs=[['안내판','var(--v)',0.12],['가용 지도','var(--q)',0.16],['아이노드 영역','var(--pink)',0.22],['데이터 영역','var(--blue)',0.50]];
+  let x=20; const totalW=W-40;
+  regs.forEach(r=>{ const w=r[2]*totalW; s+=`<rect x="${x.toFixed(1)}" y="50" width="${(w-3).toFixed(1)}" height="50" rx="6" fill="${r[1]}" opacity="0.82" stroke="${r[1]}"/><text x="${(x+w/2).toFixed(1)}" y="79" text-anchor="middle" font-size="10" font-family="'Pretendard'" font-weight="700" fill="#0b0e14">${r[0]}</text>`; x+=w; });
+  s+=`<text x="20" y="40" font-size="9.5" font-family="monospace" fill="var(--muted)">디스크 앞쪽 → 뒤쪽</text>`;
+  s+=`<text x="${W/2}" y="125" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">켤 때 안내판부터 읽어 구조 파악</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'디스크 구역');
+  document.getElementById('lab0').innerHTML='디스크는 <b style="color:var(--v)">안내판</b> → <b style="color:var(--q)">가용 지도</b> → <b style="color:var(--pink)">아이노드 영역</b> → <b style="color:var(--blue)">데이터 영역</b>으로 나뉘어요. 장부와 내용에 각자 자리가 있죠.';
+})();
+
+// ===== STEP 1: free map =====
+(function(){ let used=[0,1,2]; const steps=[
+    {act:'시작', used:[0,1,2]},
+    {act:'파일 A 쓰기 (블록 5,6)', used:[0,1,2,5,6]},
+    {act:'파일 B 쓰기 (블록 3)', used:[0,1,2,3,5,6]},
+    {act:'파일 A 삭제 → 빔 표시', used:[0,1,2,3]}
+  ];
+  let i=0;
+  const play=document.getElementById('play1');
+  play.innerHTML=`<button class="btn" id="prev1">◀ 이전</button><button class="btn" id="next1">다음 ▶</button><span class="note" id="cnt1" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=150; const st=steps[i]; let s='';
+    s+=OS.blocks(30,60,10,{on:st.used,title:'가용 지도 (파랑=사용 중)'});
+    s+=`<text x="${W/2}" y="120" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--ink)">${st.act}</text>`;
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'가용 지도');
+    document.getElementById('cnt1').textContent=`${i+1} / ${steps.length}`;
+    const msg={0:'처음엔 살림용 블록 몇 개만 사용 중.',1:'파일 A가 빈 블록 5·6을 차지 → 지도에 "사용 중".',2:'파일 B가 블록 3을 차지.',3:'파일 A 삭제 — 내용은 그대로 두고 <b style="color:var(--q)">지도에서 5·6을 "빔"</b>으로만 표시(그래서 삭제가 빨라요).'};
+    document.getElementById('lab1').innerHTML=msg[i];
+  }
+  document.getElementById('next1').onclick=()=>{ i=(i+1)%steps.length; render(); };
+  document.getElementById('prev1').onclick=()=>{ i=(i-1+steps.length)%steps.length; render(); };
+  render();
+})();
+
+// ===== STEP 2: locality =====
+(function(){ let view='close';
+  const tog=document.getElementById('layTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=160;
+    const on = view==='close' ? [4,5,6] : [1,5,9];
+    let s=OS.blocks(30,50,12,{on,title:'한 파일의 블록(파랑) 배치'});
+    // reading path arrows
+    let jumps=0; for(let k=1;k<on.length;k++) jumps+=Math.abs(on[k]-on[k-1]);
+    s+=`<text x="${W/2}" y="110" text-anchor="middle" font-size="11" font-family="monospace" fill="${view==='close'?'var(--good)':'var(--hot)'}">읽기 건너뛴 거리 합: ${jumps}칸</text>`;
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'배치와 속도');
+    document.getElementById('lab2').innerHTML = view==='close'
+      ? '블록 4·5·6이 <b style="color:var(--good)">붙어 있어</b> 순서대로 쭉 읽으면 돼요(건너뜀 적음 → 빠름).'
+      : '블록 1·5·9가 <b style="color:var(--hot)">흩어져</b> 매번 멀리 건너뛰어요(단편화 → 느림). 그래서 OS는 모으려 애써요.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">구역 + 지도 + 지역성</text>`;
+  const rows=[['구역','안내판·가용지도·아이노드·데이터','var(--v)'],['빈 칸·배치','지도로 추적, 한 파일은 가까이 모음','var(--q)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="8.6" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='CPU는 느린 디스크와 어떻게 대화할까 — 다음 챕터.';
+})();
+</script>
+</body>
+</html>

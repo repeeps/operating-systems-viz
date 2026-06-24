@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 · 없으면 그때 가져오기 — 요구 페이징 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--pink)">PART C · 메모리의 마법 — CH 12</div>
+    <h1>없으면 그때 가져오기 — 요구 페이징</h1>
+    <p class="intro">OS는 모든 페이지를 미리 올리지 않고 <b>실제로 건드릴 때</b> 가져와요(요구 페이징). 아직 없는 페이지를 읽으면 CH03의 <b>예외/폴트</b>(페이지 폴트)가 터지는데, 이건 오류가 아니라 "디스크에서 가져와 달라"는 <b>정상 신호</b>예요. OS가 빈 프레임에 실어 오고 표를 갱신한 뒤, 멈췄던 명령을 다시 실행하죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 다 안 올린다</button>
+    <button data-s="1">01 · 페이지 폴트</button>
+    <button data-s="2">02 · 가져오는 과정</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--pink)">Step 00 — Don't Load It All</span>
+    <h2>처음엔 거의 비어 있어요</h2>
+    <p class="lead">큰 프로그램을 켜도, OS는 전부를 메모리에 올리지 않아요. 시작에 필요한 몇 페이지만 올리고 나머지는 디스크에 둔 채 시작하죠. 대부분의 프로그램은 자기 코드·데이터의 일부만 실제로 쓰거든요(안 쓰는 기능도 많죠). 안 건드릴 페이지를 굳이 메모리에 올릴 이유가 없어요 — 그만큼 메모리를 아끼고, 시작도 빨라져요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 필요한 것만 메모리에. 나머지는 디스크에 둔 채로 시작 — 메모리 절약·빠른 시작.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--hot)">Step 01 — The Page Fault</span>
+    <h2>없는 페이지를 읽으면</h2>
+    <p class="lead">프로그램이 아직 메모리에 없는 페이지를 읽으려 하면, 페이지 테이블의 그 줄엔 프레임 대신 "<b>디스크에 있음</b>" 표시가 있어요. 그 순간 <b>페이지 폴트</b>가 발생해요 — CH03의 세 문 중 <b>예외/폴트</b>죠. 중요한 건 이게 <b>버그가 아니라는 점</b>. "필요한 페이지가 도착하지 않았으니 가져오자"는 정상 신호예요. 폴트가 OS를 커널로 불러들여요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 없는 페이지 접근 = 페이지 폴트(예외). 오류가 아니라 "가져와 달라"는 신호.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--q)">Step 02 — Bringing It In</span>
+    <h2>가져와서 이어가기</h2>
+    <p class="lead">폴트 뒤의 처리를 단계로 따라가요. ① OS가 디스크에서 그 페이지를 찾아, ② 빈 <b>프레임</b>으로 실어 오고, ③ 페이지 테이블의 그 줄을 "이제 프레임 N에 있음"으로 <b>갱신</b>한 뒤, ④ 멈췄던 그 명령을 <b>다시 실행</b>해요. 이번엔 페이지가 메모리에 있으니 폴트 없이 통과하죠. 프로그램은 자기가 잠깐 멈췄다는 것도 모른 채 이어가요(디스크가 느려 시간은 좀 걸리지만).</p>
+    <div class="ctl" id="play2"></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 디스크→프레임 적재 → 표 갱신 → 명령 재실행. 두 번째엔 폴트 없이 통과.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead"><b>요구 페이징</b>: 페이지는 실제로 건드릴 때 디스크에서 가져와요. 없는 페이지 접근은 <b>페이지 폴트</b>(CH03의 예외)를 일으키고, 이건 정상적인 "가져오기 신호"죠. OS가 적재→표 갱신→재실행하면 끝. 이렇게 <b>폴트는 새 페이지가 들어오는 사건</b>이에요. 그런데 빈 프레임이 하나도 없으면? 새 걸 들이려면 <b>기존 페이지 하나를 내보내야</b> 해요 — 누구를 내보낼지가 다음 챕터의 문제(폴트가 "유입"이라면, 다음은 "압력").</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="13-page-replace.html" style="color:var(--q);font-weight:700">CH 13 · 누구를 내보낼까 — 페이지 교체</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '12 · 요구 페이징');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=200; let s='';
+  s+=OS.pageTable(40,30,[{v:0,f:2},{v:1,f:null},{v:2,f:null},{v:3,f:5}],{title:'페이지 테이블',w:160});
+  s+=`<text x="120" y="170" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--muted)">일부만 메모리, 나머지는 디스크</text>`;
+  s+=OS.frames(250,46,[{by:'P0',color:'var(--good)'},{by:'P3',color:'var(--good)'},{by:null},{by:null}],{cols:2,cw:70,ch:34,title:'물리 메모리'});
+  s+=OS.disk(280,140,{w:120,h:46,label:'디스크 — P1·P2 대기'});
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'부분 적재');
+  document.getElementById('lab0').innerHTML='시작에 필요한 P0·P3만 메모리에. P1·P2는 <b style="color:var(--slate)">디스크에 둔 채</b> 시작해요 — 안 쓸지도 모르니 굳이 안 올려요.';
+})();
+
+// ===== STEP 1 =====
+(function(){ const W=460,H=190; let inner='';
+  inner+=OS.proc(40,28,{label:'앱',state:'run',w:64,h:34});
+  inner+=OS.chip(220,42,'P1 읽기 시도',{color:'var(--q)',minW:110,h:26});
+  inner+=`<text x="220" y="74" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--hot)">표에 "디스크에 있음" → 폴트!</text>`;
+  inner+=OS.interrupt(220,80,220,118,{color:'var(--dead)',label:'페이지 폴트'});
+  inner+=`<rect x="180" y="120" width="80" height="28" rx="6" fill="var(--panel)" stroke="var(--v)" stroke-width="1.4"/><text x="220" y="138" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--v)">OS 폴트 처리</text>`;
+  document.getElementById('s1').innerHTML=OS.boundary({W,H,midY:100,inner});
+  document.getElementById('lab1').innerHTML='없는 페이지(P1)를 읽으면 <b style="color:var(--dead)">페이지 폴트</b>(CH03의 예외)가 터져 OS를 불러요. 오류가 아니라 "가져와 달라"는 정상 신호.';
+})();
+
+// ===== STEP 2 =====
+(function(){ const steps=[
+    {t:'① 디스크에서 찾기', d:'OS가 P1을 디스크에서 위치 확인', st:0},
+    {t:'② 빈 프레임으로 적재', d:'P1을 비어 있던 프레임으로 실어 옴', st:1},
+    {t:'③ 페이지 테이블 갱신', d:'P1 줄을 "프레임 N에 있음"으로 수정', st:2},
+    {t:'④ 명령 재실행', d:'멈췄던 읽기를 다시 — 이번엔 폴트 없이 통과', st:3}
+  ];
+  let i=0;
+  const play=document.getElementById('play2');
+  play.innerHTML=`<button class="btn" id="prev2">◀ 이전</button><button class="btn" id="next2">다음 ▶</button><span class="note" id="cnt2" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=200; const st=steps[i]; let s='';
+    s+=OS.disk(40,120,{w:90,h:46,label:'디스크'});
+    s+=OS.pageTable(170,24,[{v:1,f: st.st>=2 ? 2 : null}],{title:'페이지 테이블',hl:0,w:150});
+    const frameCells=[{by: st.st>=1 ? 'P1':null, color:'var(--good)'},{by:null}];
+    s+=OS.frames(360,40,frameCells,{cols:1,cw:70,ch:34,title:'프레임'});
+    if(st.st===0) s+=OS.arrow(90,118,90,90,{color:'var(--hot)',lw:1.5});
+    if(st.st===1) s+=OS.arrow(130,130,360,57,{color:'var(--good)',lw:1.6});
+    if(st.st===3){ s+=OS.proc(40,30,{label:'앱',state:'run',w:60,h:30}); s+=`<text x="220" y="150" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--good)">재실행 → 이제 메모리에 있음 → 통과 ✓</text>`; }
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'적재 과정');
+    document.getElementById('cnt2').textContent=`${i+1} / ${steps.length}`;
+    document.getElementById('lab2').innerHTML=`<b style="color:var(--q)">${st.t}</b> — ${st.d}`;
+  }
+  document.getElementById('next2').onclick=()=>{ i=(i+1)%steps.length; render(); };
+  document.getElementById('prev2').onclick=()=>{ i=(i-1+steps.length)%steps.length; render(); };
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">폴트 = 페이지가 들어오는 사건</text>`;
+  const rows=[['요구 페이징','건드릴 때 디스크→프레임으로 적재','var(--q)'],['페이지 폴트','없는 페이지 접근 → 정상 적재 신호(예외)','var(--hot)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='빈 프레임이 없으면 누굴 내보낼까 — 다음, 페이지 교체.';
+})();
+</script>
+</body>
+</html>

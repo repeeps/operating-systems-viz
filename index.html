@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .hero{text-align:center; padding:30px 0 10px;}
+  .hero .tag{font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.25em; text-transform:uppercase; color:var(--q);}
+  .hero h1{font-size:clamp(30px,6vw,52px); font-weight:800; letter-spacing:-.03em; margin:14px 0 12px; line-height:1.05;
+    background:linear-gradient(100deg,#fff,#9bb6ff 55%,var(--v)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero p{color:var(--muted); max-width:660px; margin:0 auto; font-size:16px;}
+  .seclabel{font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); margin:46px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .seclabel b{color:var(--hot);}
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px;}
+  .ccard{display:block; text-decoration:none; background:var(--panel); border:1px solid var(--line); border-radius:18px;
+    padding:22px; transition:.22s; position:relative; overflow:hidden;}
+  .ccard::before{content:''; position:absolute; inset:0 auto 0 0; width:4px; background:var(--accent,var(--q)); opacity:.8;}
+  .ccard:hover{transform:translateY(-4px); border-color:var(--accent,var(--q)); box-shadow:0 14px 36px rgba(0,0,0,.35);}
+  .ccard .num{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent,var(--q)); font-weight:700;}
+  .ccard h3{margin:8px 0 8px; font-size:19px; color:var(--ink); letter-spacing:-.01em;}
+  .ccard p{margin:0; font-size:13.5px; color:var(--muted); line-height:1.6;}
+  .ccard .chips{margin-top:14px; display:flex; gap:6px; flex-wrap:wrap;}
+  .ccard .chip{font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:6px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--muted);}
+  .foot{margin-top:60px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="tag">수식·코드 없는 직관 입문 · 0번 + 18챕터</div>
+    <h1>운영체제, 눈으로 보기</h1>
+    <p>컴퓨터는 한 대인데 — CPU도, 메모리도, 디스크도 하나인데 — 프로그램은 수십 개가 동시에 돌아요. <b>운영체제</b>는 그 사이에서, 모든 프로그램에게 "<b>내 컴퓨터를 혼자 쓰는 것 같은 착각</b>"을 주는 마술사예요. 각자 자기 CPU·자기 메모리가 있는 듯 보이게 하고(가상화), 서로 못 건드리게 보호하고, 꺼져도 안 사라지는 파일을 줘요. 그 보이지 않는 살림을 — 시스템콜·스케줄링·페이징·파일시스템을 — <b>움직이는 그림</b>으로 익히는 0번 + 18챕터. (<b>동시성</b> 트랙이 "한 프로그램 안 여러 흐름"이었다면, 여긴 그 아래 — 커널이 자원을 나눠주는 층이에요.)</p>
+  </div>
+
+  <a href="00-intro.html" style="display:block;text-decoration:none;margin:8px 0 4px;padding:18px 22px;border-radius:16px;background:linear-gradient(100deg,rgba(251,191,36,.12),rgba(55,189,248,.08));border:1px solid var(--hot);transition:.2s">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--hot);font-weight:700">👋 처음이세요?</div>
+    <div style="font-size:18px;font-weight:800;color:var(--ink);margin:6px 0 4px">0번 — 운영체제라는 문제 (한 대를 여럿이, 착각으로 나눠 쓰기)</div>
+    <div style="font-size:13.5px;color:var(--muted)">한 대의 하드웨어를 수십 개 프로그램이 어떻게 나눠 쓰나. OS가 주는 세 가지 착각(CPU·메모리·영속성)과 서로를 막는 보호 경계를 한눈에. →</div>
+  </a>
+  <p class="note" style="margin:6px 2px 0;color:var(--faint);font-size:13px">📚 처음이라면 <b>0번부터 순서대로</b>. <b>특정 OS 강좌가 아니라 멘탈 모델</b>이에요 — 커널이 한 CPU를 여러 프로세스에 번갈아 주고(스케줄링), 가상 주소로 각자에게 큰 개인 메모리를 그려주고(페이징), 흩어진 디스크 블록을 하나의 파일로 보이게 하는 과정을 <b>직접 만지며</b> 봐요. 척추는 <b>보호 경계(A) → CPU 가상화(B) → 메모리 가상화(C) → 저장(D) → 종합(E)</b>. <b style="color:var(--hot)">CPU 가상화(B)</b>와 <b style="color:var(--hot)">메모리 가상화(C)</b>가 두 기둥이에요. (반복 테마: <b>캐싱</b> — 느린 층을 빠른 층으로 가리기.)</p>
+
+  <div class="seclabel">PART A · 보호의 경계</div>
+  <div class="cards">
+    <a class="ccard" href="01-os-role.html"><div class="num">01</div><h3>OS의 역할</h3><p>자원 관리자이자, 한 대를 여럿이 혼자 쓰는 듯 보이게 하는 마술사. OS가 푸는 두 문제.</p><div class="chips"><span class="chip">resource manager</span></div></a>
+    <a class="ccard" href="02-kernel-user.html"><div class="num">02</div><h3>커널 모드 vs 유저 모드</h3><p>특권의 벽. 앱은 하드웨어를 직접 못 건드려요 — 위험한 일은 커널만 할 수 있죠.</p><div class="chips"><span class="chip">privilege</span></div></a>
+    <a class="ccard" href="03-into-kernel.html"><div class="num">03</div><h3>커널로 들어가는 세 문</h3><p>시스템콜(자발적)·인터럽트(하드웨어)·예외/폴트. CPU가 커널로 점프하는 공통 메커니즘.</p><div class="chips"><span class="chip">syscall</span><span class="chip">trap</span></div></a>
+  </div>
+
+  <div class="seclabel">PART B · <b>CPU 가상화</b> — 프로세스와 스케줄링</div>
+  <div class="cards">
+    <a class="ccard" href="04-process.html"><div class="num">04</div><h3>프로세스란</h3><p>디스크의 죽은 실행 파일 vs 실행 중인 프로세스. 주소공간(코드·데이터·힙·스택) + PCB.</p><div class="chips"><span class="chip">process</span><span class="chip">PCB</span></div></a>
+    <a class="ccard" href="05-process-birth.html"><div class="num">05</div><h3>프로세스의 탄생</h3><p>복제(fork)하고 갈아끼우기(exec). 첫 프로세스에서 갈라져 나온 프로세스 가계도.</p><div class="chips"><span class="chip">fork/exec</span></div></a>
+    <a class="ccard" href="06-context-switch.html"><div class="num">06</div><h3>문맥 전환</h3><p>한 CPU로 여러 프로세스를 번갈아. 타이머 인터럽트로 CPU를 되찾고, 상태를 저장·복원해요(공짜 아님).</p><div class="chips"><span class="chip">context switch</span></div></a>
+    <a class="ccard" href="07-scheduling-1.html"><div class="num">07</div><h3>스케줄링 ① 누가 먼저</h3><p>FCFS·SJF. 응답이 빠른 게 좋을까, 처리량이 많은 게 좋을까 — 정책의 트레이드오프.</p><div class="chips"><span class="chip">FCFS/SJF</span></div></a>
+    <a class="ccard" href="08-scheduling-2.html"><div class="num">08</div><h3>스케줄링 ② 공정하게</h3><p>라운드로빈과 타임퀀텀(너무 크면 FCFS, 작으면 교환 낭비)·우선순위·기아.</p><div class="chips"><span class="chip">round robin</span></div></a>
+  </div>
+
+  <div class="seclabel">PART C · <b>메모리 가상화</b> — 메모리의 마법</div>
+  <div class="cards">
+    <a class="ccard" href="09-why-virtual.html"><div class="num">09</div><h3>왜 가상 주소</h3><p>두 가지 일을 해요 — 서로 못 침범하게 격리, 그리고 "각자 큰 개인 메모리"라는 착각.</p><div class="chips"><span class="chip">isolation</span></div></a>
+    <a class="ccard" href="10-paging.html"><div class="num">10</div><h3>페이징</h3><p>메모리를 페이지로 쪼개고, 페이지 테이블이 가상 페이지→물리 프레임을 매핑. 권한 비트도.</p><div class="chips"><span class="chip">page table</span></div></a>
+    <a class="ccard" href="11-tlb.html"><div class="num">11</div><h3>TLB</h3><p>매 접근마다 테이블을 보면 느려요 → 최근 변환을 캐시. 지역성 덕에 거의 대부분 적중.</p><div class="chips"><span class="chip">TLB</span><span class="chip">cache</span></div></a>
+    <a class="ccard" href="12-demand-paging.html"><div class="num">12</div><h3>요구 페이징 · 페이지 폴트</h3><p>필요할 때만 메모리에 올려요. 없으면 폴트 → 디스크에서 가져오기. RAM보다 큰 착각의 비밀.</p><div class="chips"><span class="chip">page fault</span></div></a>
+    <a class="ccard" href="13-page-replace.html"><div class="num">13</div><h3>페이지 교체 · 스래싱</h3><p>자리가 없으면 누군가 나가야(LRU victim). 너무 많이 돌리면 페이징만 하다 멈춰요(스래싱).</p><div class="chips"><span class="chip">LRU</span><span class="chip">thrashing</span></div></a>
+  </div>
+
+  <div class="seclabel">PART D · 파일과 저장 (영속성)</div>
+  <div class="cards">
+    <a class="ccard" href="14-file-inode.html"><div class="num">14</div><h3>파일과 inode</h3><p>파일 = 바이트 묶음 + 메타데이터(inode). 이름은 디렉터리가 매핑 — 저장의 가상화.</p><div class="chips"><span class="chip">inode</span></div></a>
+    <a class="ccard" href="15-disk-layout.html"><div class="num">15</div><h3>디스크 위의 살림 배치</h3><p>디스크를 구역(안내판·가용 지도·아이노드·데이터)으로 나누고, 빈 칸은 지도로 추적하며, 한 파일은 가까이 모아요.</p><div class="chips"><span class="chip">layout</span><span class="chip">locality</span></div></a>
+    <a class="ccard" href="16-io-interrupt.html"><div class="num">16</div><h3>I/O와 인터럽트</h3><p>느린 장치를 기다리며 CPU를 낭비하지 않아요 — 바쁜 대기 대신 인터럽트로 "다 됐다" 알림.</p><div class="chips"><span class="chip">interrupt</span><span class="chip">I/O</span></div></a>
+  </div>
+
+  <div class="seclabel">PART E · 큰 그림 (종합)</div>
+  <div class="cards">
+    <a class="ccard" href="17-syscall-life.html"><div class="num">17</div><h3>한 줄의 여정 — 모두가 협력</h3><p>파일 읽기 한 줄이 시스템콜→파일 시스템→디스크→대기·전환→인터럽트→복귀까지. 배운 모든 게 한 컷에.</p><div class="chips"><span class="chip">end-to-end</span></div></a>
+    <a class="ccard" href="18-beyond.html"><div class="num">18</div><h3>여기서 더 나아가면</h3><p>동시성(경쟁 상태·잠금·교착)·프로세스끼리 대화(IPC·파이프)·멀티코어·가상화·보안. 다음 공부의 지도.</p><div class="chips"><span class="chip">concurrency</span><span class="chip">IPC</span></div></a>
+  </div>
+
+  <p class="foot" style="margin-top:30px">// 운영체제의 알맹이를 직접 만든 비영리 인터랙티브 학습 자료 · 모든 스케줄링·페이징·I/O는 브라우저에서 실시간</p>
+</div>
+
+<script>
+(function(){
+  const PAL=['var(--q)','var(--v)','var(--hot)','var(--good)','var(--pink)','var(--blue)'];
+  document.querySelectorAll('a.ccard').forEach((a,i)=>{ a.style.setProperty('--accent', PAL[i%PAL.length]); });
+})();
+</script>
+</body>
+</html>

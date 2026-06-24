@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · OS의 역할 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--q)">PART A · 보호의 경계 — CH 01</div>
+    <h1>OS의 역할</h1>
+    <p class="intro">운영체제는 <b>앱과 하드웨어 사이의 층</b>이에요. 앱은 디스크·메모리·CPU를 직접 만지지 않고 OS에 부탁해요. OS가 하는 일은 둘 — ① <b>가상화(추상화)</b>: 복잡하고 하나뿐인 하드웨어를, 쉽고 각자 여럿인 듯 보이게. ② <b>자원 관리·보호</b>: 한정된 CPU·메모리를 공정하게 나누고, 서로 못 건드리게 막기. 이 둘이 OS의 모든 일의 뿌리예요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 사이의 층</button>
+    <button data-s="1">01 · 두 가지 일</button>
+    <button data-s="2">02 · OS가 없다면</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--q)">Step 00 — The Layer Between</span>
+    <h2>앱 ─ OS ─ 하드웨어</h2>
+    <p class="lead">컴퓨터는 세 층이에요 — 맨 위 <b>앱</b>들, 맨 아래 <b>하드웨어</b>(CPU·메모리·디스크), 그 사이에 <b>운영체제</b>. 앱이 "파일 읽어줘", "메모리 더 줘"처럼 부탁하면 OS가 하드웨어를 대신 다뤄요. 앱은 하드웨어의 복잡함을 몰라도 되고, 하드웨어는 여러 앱에게 안전하게 공유돼요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 앱은 OS를 통해서만 하드웨어를 써요. OS = 중개자이자 관리자.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--hot)">Step 01 — Two Jobs</span>
+    <h2>마술사이자 살림꾼</h2>
+    <p class="lead">OS의 일은 크게 둘이에요. 토글로 보세요. <b>가상화</b>: 하나뿐인·복잡한 하드웨어를 "각자 자기 것이 있는 듯한 쉬운 모습"으로 바꿔 보여줘요(마술사). <b>자원 관리·보호</b>: 한정된 CPU 시간·메모리 공간을 누구에게 얼마나 줄지 정하고, 서로 침범 못 하게 지켜요(살림꾼·경비).</p>
+    <div class="toggles" id="jobTog">
+      <button data-v="virt" class="on">가상화 (마술사)</button>
+      <button data-v="mgr">자원 관리·보호 (살림꾼)</button>
+    </div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 가상화=쉬운·여럿인 듯한 착각, 관리·보호=공정·안전한 분배. OS의 두 축.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — Without an OS</span>
+    <h2>OS가 없다면 무슨 일이</h2>
+    <p class="lead">OS 없이 앱이 하드웨어를 직접 쓴다고 해보세요. 토글로 두 문제를 보세요 — <b>충돌</b>: 두 앱이 같은 메모리에 막 쓰면 서로의 데이터를 망가뜨려요. <b>독점</b>: 한 앱이 CPU를 안 놓으면 나머지는 영영 멈춰요. OS는 바로 이 "공유의 무정부 상태"를 중재로 막아 주는 거예요.</p>
+    <div class="toggles" id="noTog">
+      <button data-v="crash" class="on">충돌(메모리)</button>
+      <button data-v="hog">독점(CPU)</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 보호·중재가 없으면 공유는 곧 재앙. OS의 존재 이유예요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">OS = 앱과 하드웨어 사이의 층으로, <b>가상화</b>(복잡·유일한 하드웨어를 쉽고 여럿인 듯)와 <b>자원 관리·보호</b>(공정 분배 + 서로 막기) 두 일을 해요. 그런데 "서로 못 건드리게"를 어떻게 강제할까요? 앱이 마음대로 하드웨어를 만지면 보호가 무너지잖아요. 그 답이 다음 챕터 — <b>특권의 벽</b>(커널 모드 vs 유저 모드)이에요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="02-kernel-user.html" style="color:var(--q);font-weight:700">CH 02 · 커널 모드 vs 유저 모드</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '01 · OS의 역할');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: layer diagram =====
+(function(){ const W=460,H=210;
+  let s='';
+  // apps
+  ['브라우저','게임','편집기'].forEach((a,i)=>{ s+=OS.proc(50+i*130,24,{label:a,state:'ready',w:110,h:34}); });
+  s+=`<text x="${W-20}" y="44" text-anchor="end" font-size="9" font-family="monospace" fill="var(--q)">앱(유저)</text>`;
+  // OS layer
+  s+=`<rect x="40" y="86" width="${W-80}" height="40" rx="9" fill="rgba(192,132,252,0.12)" stroke="var(--v)" stroke-width="1.6"/><text x="${W/2}" y="111" text-anchor="middle" font-size="13" font-family="'Pretendard'" font-weight="700" fill="var(--v)">운영체제 (커널)</text>`;
+  // hardware
+  ['CPU','메모리','디스크'].forEach((h,i)=>{ s+=OS.chip(95+i*135,170,h,{color:'var(--slate)',minW:90,h:28}); });
+  s+=`<text x="${W-20}" y="174" text-anchor="end" font-size="9" font-family="monospace" fill="var(--slate)">하드웨어</text>`;
+  // arrows
+  s+=OS.arrow(W/2,60,W/2,84,{color:'var(--q)',lw:1.6}); s+=OS.arrow(W/2,128,W/2,154,{color:'var(--v)',lw:1.6});
+  s+=`<text x="${W/2+8}" y="76" font-size="8.5" font-family="monospace" fill="var(--q)">부탁(시스템콜)</text>`;
+  s+=`<text x="${W/2+8}" y="146" font-size="8.5" font-family="monospace" fill="var(--v)">대신 조작</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'층 구조');
+  document.getElementById('lab0').innerHTML='앱은 하드웨어를 직접 안 만져요 — <b style="color:var(--v)">OS(커널)</b>에 부탁하면, OS가 대신 CPU·메모리·디스크를 다뤄요.';
+})();
+
+// ===== STEP 1: two jobs =====
+(function(){ let view='virt';
+  const tog=document.getElementById('jobTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=190; let s='';
+    if(view==='virt'){
+      s+=OS.chip(110,50,'복잡한 하드웨어 1개',{color:'var(--slate)',minW:170,h:28});
+      s+=OS.arrow(110,68,110,100,{color:'var(--v)',lw:1.8}); s+=`<text x="120" y="90" font-size="9" font-family="monospace" fill="var(--v)">OS</text>`;
+      ['앱A: 내 CPU·메모리','앱B: 내 CPU·메모리','앱C: 내 CPU·메모리'].forEach((t,i)=>{ s+=OS.chip(230,40+i*40,t,{color:'var(--good)',minW:200,h:26}); });
+      s+=OS.arrow(195,114,130,114,{color:'var(--v)',lw:1.4,dash:'4 3'});
+      document.getElementById('lab1').innerHTML='<b style="color:var(--v)">가상화</b>: 하나뿐인 복잡한 하드웨어를 → 앱마다 "내 것이 따로 있는 쉬운 모습"으로 바꿔 보여줘요.';
+    } else {
+      s+=OS.chip(W/2,40,'한정된 CPU·메모리',{color:'var(--slate)',minW:170,h:28});
+      ['앱A','앱B','앱C'].forEach((a,i)=>{ const x=70+i*150; s+=OS.proc(x,90,{label:a,state:'ready',w:60,h:34}); s+=OS.arrow(x+30,86,W/2,58,{color:'var(--hot)',lw:1.3,dash:'3 3'}); });
+      s+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--hot)">OS가 "누구에게 얼마나" 정하고 경계를 지킴</text>`;
+      document.getElementById('lab1').innerHTML='<b style="color:var(--hot)">자원 관리·보호</b>: 모두가 원하는 한정된 자원을 OS가 공정하게 나누고, 서로의 영역을 침범 못 하게 막아요.';
+    }
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'두 일');
+  }
+  render();
+})();
+
+// ===== STEP 2: without OS =====
+(function(){ let view='crash';
+  const tog=document.getElementById('noTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=180; let s='';
+    if(view==='crash'){
+      s+=OS.proc(40,40,{label:'앱A',state:'ready',w:56,h:34}); s+=OS.proc(364,40,{label:'앱B',state:'ready',w:56,h:34});
+      s+=OS.frames(150,40,[{by:'A',color:'var(--good)'},{by:'B→덮음!',color:'var(--dead)'},{by:'A',color:'var(--good)'}],{cols:3,cw:50,ch:34,title:'공유 메모리(보호 없음)'});
+      s+=OS.arrow(96,57,148,57,{color:'var(--good)',lw:1.4}); s+=OS.arrow(360,57,308,57,{color:'var(--dead)',lw:1.4});
+      s+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--dead)">앱B가 앱A의 칸을 덮어씀 → A의 데이터 파괴</text>`;
+      document.getElementById('lab2').innerHTML='<b style="color:var(--dead)">충돌</b>: 보호가 없으면 한 앱이 다른 앱의 메모리를 덮어써 망가뜨려요. OS의 격리가 이걸 막아요(PART C).';
+    } else {
+      s+=`<text x="40" y="40" font-size="10" font-family="monospace" fill="var(--muted)">앱A가 CPU를 안 놓으면…</text>`;
+      s+=OS.proc(40,56,{label:'앱A',state:'run',w:70,h:40,sub:'CPU 독점'});
+      s+=OS.proc(200,56,{label:'앱B',state:'wait',w:70,h:40,sub:'영영 대기'});
+      s+=OS.proc(300,56,{label:'앱C',state:'wait',w:70,h:40,sub:'영영 대기'});
+      s+=`<text x="${W/2}" y="140" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--hot)">나머지는 멈춤 — OS가 강제로 뺏어야(타이머 인터럽트)</text>`;
+      document.getElementById('lab2').innerHTML='<b style="color:var(--hot)">독점</b>: 한 앱이 CPU를 안 놓으면 시스템이 멈춰요. OS가 강제로 회수해 번갈아 줘요(PART B).';
+    }
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'OS가 없다면');
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="24" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">OS = 가상화 + 자원 관리·보호</text>`;
+  const rows=[['가상화','복잡·유일한 하드웨어 → 쉽고 여럿인 듯','var(--v)'],['관리·보호','공정 분배 + 서로 못 건드리게','var(--hot)']];
+  rows.forEach((r,i)=>{ const y=44+i*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9.5" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='"서로 못 건드리게"를 어떻게 강제하나 — 다음, 특권의 벽.';
+})();
+</script>
+</body>
+</html>

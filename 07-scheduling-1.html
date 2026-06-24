@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 · 누구를 먼저? 스케줄링 ① — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART B · 프로세스와 스케줄링 — CH 07</div>
+    <h1>누구를 먼저? 스케줄링 ①</h1>
+    <p class="intro">준비 큐에 여럿이 기다리면, OS는 <b>누구에게 CPU를 줄지</b> 골라야 해요. 가장 단순한 규칙은 <b>온 순서대로</b>(FCFS)예요. 공평하지만, 앞에 <b>긴 작업</b> 하나가 서면 뒤의 짧은 작업들이 한참 굶죠(줄 선 트럭 뒤의 자전거들). 그래서 <b>짧은 것 먼저</b>(SJF)가 평균 기다림을 줄여요. 이 챕터는 "기다리는 시간"을 눈으로 재며 두 규칙을 비교해요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 줄 세우기</button>
+    <button data-s="1">01 · 온 순서대로</button>
+    <button data-s="2">02 · 짧은 것 먼저</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--good)">Step 00 — The Waiting Line</span>
+    <h2>기다림을 어떻게 잴까</h2>
+    <p class="lead">세 작업이 거의 동시에 도착해 준비 큐에 섰어요. CPU는 하나라 한 번에 하나씩 처리하죠. 우리가 따질 건 <b>평균 기다린 시간</b> — 각 작업이 CPU를 받기까지 줄에서 보낸 시간의 평균이에요. 같은 작업들이라도 <b>처리 순서</b>를 바꾸면 이 평균이 확 달라져요. 그게 스케줄링이 중요한 이유.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 측정 기준 = 평균 기다린 시간. 순서가 이 값을 좌우해요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — First Come, First Served</span>
+    <h2>온 순서대로 (FCFS)</h2>
+    <p class="lead">가장 직관적인 규칙: 줄 선 순서대로 처리. 공평하고 단순하죠. 그런데 도착 순서가 <b>긴 작업 → 짧은 작업</b>이면? 짧은 작업들이 긴 작업 뒤에서 하염없이 기다려요(트럭 한 대 뒤에 막힌 자전거들 — <b>호위 효과</b>). 간트 차트로 누가 언제 CPU를 쓰고, 각자 얼마나 기다렸는지 보세요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ FCFS: 공평·단순하지만 긴 작업이 앞서면 뒤가 다 굶음(호위 효과).</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — Shortest Job First</span>
+    <h2>짧은 것 먼저 (SJF)</h2>
+    <p class="lead">같은 세 작업을 <b>짧은 순서대로</b> 처리하면? 짧은 작업들이 먼저 빠르게 끝나고, 긴 작업은 어차피 길었으니 마지막에. 결과적으로 <b>평균 기다림이 최소</b>가 돼요. 토글로 FCFS와 나란히 비교해 보세요 — 같은 작업, 다른 순서, 다른 평균. 단, 현실에선 "어느 게 짧은지" 미리 모른다는 게 함정이에요(그래서 다음 챕터의 타협이 필요).</p>
+    <div class="toggles" id="cmpTog">
+      <button data-v="sjf" class="on">짧은 것 먼저(SJF)</button>
+      <button data-v="fcfs">온 순서대로(FCFS)</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ SJF는 평균 기다림 최소. 하지만 작업 길이를 미리 알아야 한다는 게 약점.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead"><b>FCFS</b>는 공평·단순하지만 긴 작업이 앞서면 호위 효과로 평균 기다림이 커져요. <b>SJF</b>는 짧은 것을 먼저 빼 평균을 최소화하지만, 작업 길이를 미리 알아야 하고 짧은 게 계속 오면 긴 작업이 굶을 수 있죠. 게다가 지금까진 "한 번 잡으면 끝까지" 돌린다고 봤어요. 하지만 CH06의 타이머가 있다면 <b>중간에 끊고 번갈아</b> 줄 수도 있잖아요? 다음 챕터에서 그 방식과 우선순위를 봐요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="08-scheduling-2.html" style="color:var(--q);font-weight:700">CH 08 · 공평하게 나누기 스케줄링 ②</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '07 · 스케줄링 ①');
+VZ.setupStepper();
+const OS=VZ.OS;
+const JOBS=[{n:'P1(긴 작업)',dur:8,color:'var(--hot)'},{n:'P2',dur:3,color:'var(--q)'},{n:'P3',dur:2,color:'var(--good)'}];
+
+function avgWait(order){ // order: array of job objs in run order; arrival ~0
+  let t=0, total=0; order.forEach(j=>{ total+=t; t+=j.dur; }); return (total/order.length);
+}
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=160; let s='';
+  s+=`<text x="40" y="30" font-size="9.5" font-family="monospace" font-weight="700" fill="var(--muted)">준비 큐 (거의 동시 도착)</text>`;
+  JOBS.forEach((j,i)=>{ s+=OS.proc(40+i*140,46,{label:j.n,state:'ready',w:124,h:42,sub:'길이 '+j.dur});});
+  s+=`<text x="${W/2}" y="124" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--ink)">CPU는 하나 — 한 번에 한 작업씩</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'준비 큐');
+  document.getElementById('lab0').innerHTML='세 작업(길이 8·3·2)이 줄을 섰어요. 처리 <b>순서</b>에 따라 <b>평균 기다린 시간</b>이 달라져요 — 그걸 다음 두 단계에서 측정.';
+})();
+
+// ===== STEP 1: FCFS =====
+(function(){ const order=[JOBS[0],JOBS[1],JOBS[2]];
+  const segs=order.map(j=>({label:j.n.split('(')[0],dur:j.dur,color:j.color}));
+  const W=460;
+  let html=OS.gantt({W,H:96,segs,title:'FCFS — 온 순서대로 (P1→P2→P3)'});
+  const aw=avgWait(order);
+  html+=`<div style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--muted)">기다림: P1 0 · P2 8 · P3 11 → <b style="color:var(--hot)">평균 ${aw.toFixed(1)}</b></div>`;
+  document.getElementById('s1').innerHTML=html;
+  document.getElementById('lab1').innerHTML='긴 P1이 맨 앞 → P2·P3가 8, 11씩 기다려요. <b style="color:var(--hot)">호위 효과</b>로 평균이 커짐('+aw.toFixed(1)+').';
+})();
+
+// ===== STEP 2: SJF vs FCFS =====
+(function(){ let view='sjf';
+  const tog=document.getElementById('cmpTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460;
+    const order = view==='sjf' ? [JOBS[2],JOBS[1],JOBS[0]] : [JOBS[0],JOBS[1],JOBS[2]];
+    const segs=order.map(j=>({label:j.n.split('(')[0],dur:j.dur,color:j.color}));
+    const title = view==='sjf' ? 'SJF — 짧은 것 먼저 (P3→P2→P1)' : 'FCFS — 온 순서대로 (P1→P2→P3)';
+    let html=OS.gantt({W,H:96,segs,title});
+    // waits
+    let t=0; const waits=order.map(j=>{ const w=t; t+=j.dur; return [j.n.split('(')[0],w]; });
+    const aw=avgWait(order);
+    html+=`<div style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--muted)">기다림: ${waits.map(w=>w[0]+' '+w[1]).join(' · ')} → <b style="color:${view==='sjf'?'var(--good)':'var(--hot)'}">평균 ${aw.toFixed(1)}</b></div>`;
+    document.getElementById('s2').innerHTML=html;
+    document.getElementById('lab2').innerHTML = view==='sjf'
+      ? '짧은 P3·P2를 먼저 빼니 <b style="color:var(--good)">평균 '+aw.toFixed(1)+'</b> — FCFS(6.3)보다 훨씬 작아요. 같은 작업, 순서만 달라졌는데!'
+      : '온 순서대로면 <b style="color:var(--hot)">평균 '+aw.toFixed(1)+'</b>. SJF(2.3)와 비교해 보세요.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">순서가 평균 기다림을 바꾼다</text>`;
+  const rows=[['FCFS','공평·단순 / 긴 작업이 앞서면 호위 효과','var(--q)'],['SJF','평균 최소 / 길이를 미리 알아야·긴 작업 굶음','var(--good)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="8.6" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='끝까지 안 돌리고 번갈아 주면? — 다음, 공평하게 나누기.';
+})();
+</script>
+</body>
+</html>

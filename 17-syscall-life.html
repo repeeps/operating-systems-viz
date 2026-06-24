@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17 · 한 줄의 여정 — 모두가 협력 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART E · 큰 그림 — CH 17</div>
+    <h1>한 줄의 여정 — 모두가 협력</h1>
+    <p class="intro">지금까지의 조각들이 <b>단 하나의 동작</b>에서 어떻게 맞물리는지 봐요. 앱이 "파일을 읽어줘"라고 하는 평범한 한 줄이, 사실은 <b>시스템콜</b>(보호의 문)·<b>파일 시스템</b>(이름→아이노드→블록)·<b>디스크 I/O</b>(인터럽트 방식)·<b>스케줄링</b>(대기·문맥 전환)을 전부 거쳐요. 한 단계씩 따라가며, 앞 챕터들이 여기서 다시 등장하는 걸 확인하세요. 이게 OS의 진짜 모습 — 여러 부품의 합주예요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 전체 여정</button>
+    <button data-s="1">01 · 한 단계씩</button>
+    <button data-s="2">02 · 어느 챕터였나</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--good)">Step 00 — The Whole Journey</span>
+    <h2>"파일 읽어줘" 한 줄의 뒤편</h2>
+    <p class="lead">앱이 파일 한 줄을 읽으려 해요. 겉보기엔 순식간이지만, 뒤에서는 유저/커널의 벽을 넘고, 파일 시스템을 뒤지고, 느린 디스크를 깨우고, 그동안 CPU를 다른 일에 넘겼다가, 완료 알림을 받고 돌아오는 긴 릴레이가 일어나요. 다음 단계에서 이 릴레이를 한 칸씩 끊어 봐요. 먼저 전체 흐름을 눈에 담으세요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 한 줄의 읽기 = 보호·파일·디스크·스케줄링이 차례로 협력하는 릴레이.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Step by Step</span>
+    <h2>릴레이를 한 칸씩</h2>
+    <p class="lead">버튼으로 한 단계씩 진행하세요. 각 단계가 어디(유저/커널/디스크)에서 일어나는지, 그리고 어느 챕터의 개념인지 함께 표시돼요. 핵심 장면: 디스크가 느리니 읽던 앱은 <b>대기</b>로 비키고 CPU는 <b>다른 앱</b>을 돌려요. 디스크가 끝나면 <b>인터럽트</b>로 알리고, OS가 결과를 채워 앱을 깨워 <b>유저로 복귀</b>시키죠.</p>
+    <div class="ctl" id="play1"></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 시스템콜→파일조회→디스크요청→대기·전환→완료 인터럽트→복귀.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--pink)">Step 02 — Which Chapter?</span>
+    <h2>각 조각이 어디서 왔나</h2>
+    <p class="lead">방금 릴레이의 각 단계는 모두 앞에서 따로 배운 개념이에요. 토글로 "이 단계 = 그 챕터"를 짚어 보세요. 시스템콜·인터럽트는 보호의 세 문(CH03), 대기/실행은 프로세스 상태(CH04), 다른 앱으로 넘기는 건 문맥 전환(CH06), 이름→아이노드→블록은 파일 시스템(CH14), 시켜놓고 다른 일 하는 건 인터럽트 방식 I/O(CH16). 따로 배운 부품들이 한 동작에서 합쳐졌죠.</p>
+    <div class="toggles" id="mapTog">
+      <button data-v="prot" class="on">보호·프로세스</button>
+      <button data-v="store">파일·입출력</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 모든 단계가 앞 챕터의 개념. OS = 그 부품들의 합주.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">"파일 읽기" 한 줄이 <b>시스템콜→파일 시스템→디스크 I/O→대기·문맥 전환→완료 인터럽트→복귀</b>를 거쳐요. 따로 배운 모든 조각 — 보호의 벽, 프로세스 상태, 스케줄링, 가상 메모리, 파일, 인터럽트 — 이 한 동작에서 합주하죠. 이게 OS를 이해한다는 것의 핵심: 부품을 아는 것을 넘어 <b>부품들이 어떻게 협력하는지</b> 보는 거예요. 마지막 챕터에서는, 여기서 다루지 않은 큰 주제들을 짧게 가리키며 다음 공부의 지도를 그려요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="18-beyond.html" style="color:var(--q);font-weight:700">CH 18 · 여기서 더 나아가면</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '17 · 한 줄의 여정');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+const JOURNEY=[
+  {t:'앱: "파일 읽어줘"', d:'유저 모드 앱이 읽기 요청을 시작', where:'user', ch:'CH04'},
+  {t:'시스템콜로 커널 진입', d:'보호의 문을 통해 커널 모드로 전환', where:'kernel', ch:'CH03'},
+  {t:'파일 시스템 조회', d:'이름→아이노드→블록 위치를 알아냄', where:'kernel', ch:'CH14'},
+  {t:'디스크에 읽기 요청', d:'느린 디스크에 "이 블록 읽어줘"', where:'disk', ch:'CH16'},
+  {t:'앱은 대기, CPU는 다른 앱', d:'읽던 앱은 대기로, CPU는 다른 일 진행', where:'switch', ch:'CH06'},
+  {t:'디스크 완료 → 인터럽트', d:'다 되면 하드웨어가 인터럽트로 알림', where:'irq', ch:'CH03'},
+  {t:'결과 챙기고 앱 깨우기', d:'OS가 데이터를 채우고 앱을 준비 상태로', where:'kernel', ch:'CH16'},
+  {t:'유저로 복귀', d:'앱이 받은 데이터로 그 다음 줄을 이어감', where:'user', ch:'CH03'}
+];
+
+function sceneFor(active){ const W=460,H=200; let inner='';
+  // app
+  const appState = (active>=4 && active<=5) ? 'wait' : (active===0||active>=7?'run':'idle');
+  inner+=OS.proc(30,28,{label:'앱',state:appState,w:64,h:34,sub: appState==='wait'?'대기':''});
+  // other app (runs during wait)
+  if(active>=4&&active<=5) inner+=OS.proc(110,28,{label:'다른 앱',state:'run',w:74,h:34});
+  // kernel handler box
+  const inKernel=[1,2,6].includes(active);
+  inner+=`<rect x="${W/2-40}" y="118" width="80" height="28" rx="6" fill="${inKernel?'var(--v)':'var(--panel)'}" stroke="var(--v)" stroke-width="1.4"/><text x="${W/2}" y="136" text-anchor="middle" font-size="10" font-family="monospace" fill="${inKernel?'#0b0e14':'var(--v)'}">OS 커널</text>`;
+  // disk
+  inner+=OS.disk(360,118,{w:80,h:42,label:'디스크'});
+  // dynamic arrows by stage
+  if(active===1) inner+=OS.arrow(62,62,W/2-30,118,{color:'var(--q)',lw:1.6});
+  if(active===3) inner+=OS.arrow(W/2+40,132,360,138,{color:'var(--hot)',lw:1.5});
+  if(active===5) inner+=OS.interrupt(400,118,W/2+40,120,{color:'var(--dead)',label:'완료!'});
+  if(active===7) inner+=OS.arrow(W/2-30,120,62,62,{color:'var(--good)',lw:1.6});
+  return OS.boundary({W,H,midY:96,inner});
+}
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=210; let s='';
+  // condensed flow chips
+  const flow=['앱 요청','시스템콜','파일 조회','디스크','대기·전환','인터럽트','복귀'];
+  flow.forEach((f,i)=>{ const x=20+ (i%4)*112; const y= i<4?40:110;
+    s+=OS.chip(x+50,y,f,{color: i===4?'var(--hot)':(i===5?'var(--dead)':'var(--q)'),minW:96,h:30});
+    if(i<flow.length-1){ const sameRow=(i+1)%4!==0; }
+  });
+  // arrows row1
+  for(let i=0;i<3;i++){ s+=OS.arrow(20+i*112+100,40,20+(i+1)*112,40,{color:'var(--slate)',lw:1.2}); }
+  s+=OS.arrow(20+3*112+50,55,20+3*112+50,95,{color:'var(--slate)',lw:1.2}); // down
+  for(let i=4;i<6;i++){ s+=OS.arrow(20+(i%4)*112+100,110,20+((i+1)%4)*112,110,{color:'var(--slate)',lw:1.2}); }
+  s+=`<text x="${W/2}" y="180" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">한 줄의 읽기 = 이 모든 단계의 릴레이</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'전체 여정');
+  document.getElementById('lab0').innerHTML='파일 한 줄 읽기 뒤에는 <b style="color:var(--q)">7~8단계</b>의 릴레이가 있어요. 다음 단계에서 한 칸씩 끊어 봐요.';
+})();
+
+// ===== STEP 1 =====
+(function(){ let i=0;
+  const play=document.getElementById('play1');
+  play.innerHTML=`<button class="btn" id="prev1">◀ 이전</button><button class="btn" id="next1">다음 ▶</button><span class="note" id="cnt1" style="margin-left:8px"></span>`;
+  function render(){ const st=JOURNEY[i];
+    document.getElementById('s1').innerHTML=sceneFor(i);
+    document.getElementById('cnt1').textContent=`${i+1} / ${JOURNEY.length} · ${st.ch}`;
+    document.getElementById('lab1').innerHTML=`<b style="color:var(--q)">${st.t}</b> — ${st.d} <span style="color:var(--faint)">(${st.ch})</span>`;
+  }
+  document.getElementById('next1').onclick=()=>{ i=(i+1)%JOURNEY.length; render(); };
+  document.getElementById('prev1').onclick=()=>{ i=(i-1+JOURNEY.length)%JOURNEY.length; render(); };
+  render();
+})();
+
+// ===== STEP 2 =====
+(function(){ let view='prot';
+  const tog=document.getElementById('mapTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=180;
+    const sets={ prot:[['시스템콜·인터럽트','CH03 · 커널로 들어가는 문','var(--v)'],['대기/실행 상태','CH04 · 프로세스 상태','var(--good)'],['다른 앱으로 넘김','CH06 · 문맥 전환','var(--q)']],
+      store:[['이름→아이노드→블록','CH14 · 파일과 아이노드','var(--blue)'],['시켜놓고 다른 일','CH16 · 인터럽트 방식 I/O','var(--good)'],['닮은꼴: 없는 페이지 채우기','CH12 · 요구 페이징','var(--hot)']] };
+    const rows=sets[view];
+    let s=`<text x="${W/2}" y="26" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--muted)">이 단계 = 그 챕터</text>`;
+    rows.forEach((r,idx)=>{ const y=44+idx*40; s+=`<rect x="30" y="${y}" width="${W-60}" height="32" rx="7" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.2"/><text x="44" y="${y+20}" font-size="10.5" font-family="'Pretendard'" font-weight="700" fill="${r[2]}">${r[0]}</text><text x="${W-44}" y="${y+20}" text-anchor="end" font-size="9.5" font-family="monospace" fill="var(--muted)">${r[1]}</text>`; });
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'챕터 매핑');
+    document.getElementById('lab2').innerHTML = view==='prot'
+      ? '보호·프로세스 쪽 조각들 — 모두 PART A·B에서 배운 그대로가 여기서 일해요.'
+      : '파일·입출력 쪽 조각들 — PART C·D의 개념이 같은 동작에 합쳐졌어요.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">OS = 부품들의 합주</text>`;
+  const rows=[['한 줄의 읽기','시스템콜→파일→디스크→대기→인터럽트→복귀','var(--q)'],['핵심','부품을 넘어 "협력"을 보는 것','var(--good)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="8.4" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='여기서 더 나아가면? — 마지막 챕터, 다음 공부의 지도.';
+})();
+</script>
+</body>
+</html>

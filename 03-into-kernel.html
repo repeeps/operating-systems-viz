@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · 커널로 들어가는 세 문 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--q)">PART A · 보호의 경계 — CH 03</div>
+    <h1>커널로 들어가는 세 문</h1>
+    <p class="intro">유저 모드 앱이 커널의 도움을 받는 길은 단 <b>세 가지</b>예요. <b>시스템콜</b>(앱이 스스로 부탁 — 자발적), <b>인터럽트</b>(하드웨어가 끼어듦 — 외부 사건), <b>예외/폴트</b>(명령 실행 중 사고 — 0으로 나눔·없는 메모리 접근). 셋 다 CPU를 커널 모드로 전환하고 정해진 <b>핸들러</b>로 점프해요. 이 "세 문"은 앞으로 계속 나와요 — 타이머 인터럽트(스케줄링), 페이지 폴트(가상 메모리)가 전부 여기서 출발하거든요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 정해진 문만</button>
+    <button data-s="1">01 · 세 가지 문</button>
+    <button data-s="2">02 · 들어가는 순간</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--q)">Step 00 — Only Through the Gate</span>
+    <h2>벽엔 아무 데나 못 넘어요</h2>
+    <p class="lead">앞 챕터에서 유저/커널 사이엔 벽이 있다고 했죠. 그렇다고 앱이 커널을 전혀 못 쓰는 건 아니에요 — 다만 <b>아무 곳으로나</b> 못 들어가요. CPU는 커널로 전환될 때 늘 OS가 미리 정해둔 <b>핸들러 주소</b>로만 점프해요. 그래서 앱은 커널의 입구를 고를 수 없고, 들어가자마자 OS 코드가 받죠. 문은 정확히 셋이에요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 커널 진입은 늘 정해진 핸들러로. 앱이 입구를 못 고름 = 보호 유지.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--v)">Step 01 — Three Gates</span>
+    <h2>시스템콜 · 인터럽트 · 예외</h2>
+    <p class="lead">세 문을 토글로 비교해 보세요. <b>누가 시작했나</b>가 핵심 차이예요. 시스템콜은 <b>앱이 자발적</b>으로(파일 읽기 등 부탁), 인터럽트는 <b>하드웨어가 비동기로</b>(키 입력·타이머·디스크 완료), 예외/폴트는 <b>실행 중인 명령이 사고</b>를 내서(0으로 나눔·없는 메모리). 결과는 같아요 — 커널 모드로 전환, 핸들러로 점프.</p>
+    <div class="toggles" id="gateTog">
+      <button data-v="sys" class="on">시스템콜(자발)</button>
+      <button data-v="irq">인터럽트(하드웨어)</button>
+      <button data-v="fault">예외/폴트(사고)</button>
+    </div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 자발(시스템콜)·외부(인터럽트)·사고(예외) — 시작점은 달라도 도착은 커널 핸들러.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — The Moment of Entry</span>
+    <h2>들어가는 순간 무슨 일이</h2>
+    <p class="lead">문이 열리는 한 순간을 단계로 따라가 봐요. ① 모드 비트가 <b>커널로</b> 전환되고, ② 지금 하던 곳(돌아올 위치)을 <b>저장</b>하고, ③ 정해진 <b>핸들러</b>로 점프해 OS가 일을 처리하고, ④ 끝나면 비트를 <b>유저로</b> 되돌리고 저장한 위치로 <b>복귀</b>해요. 앱 입장에선 잠깐 멈췄다 이어지는 것처럼 보이죠.</p>
+    <div class="ctl" id="play2"></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 전환→저장→핸들러→복귀. 이 "저장·복귀"가 다음 PART 문맥 전환의 씨앗이에요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">커널로 들어가는 문은 <b>셋뿐</b> — 시스템콜(자발)·인터럽트(하드웨어)·예외(사고). 셋 다 커널 모드 전환 + 정해진 핸들러로 점프예요. 이 한 가지 메커니즘이 책 전체에 흩어져 다시 등장해요: <b>타이머 인터럽트</b>로 OS가 CPU를 되찾아 스케줄링하고(PART B), <b>페이지 폴트</b>로 없는 메모리를 채워 넣죠(PART C). 지금 이 그림을 잡아두면 뒤가 쉬워요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="04-process.html" style="color:var(--q);font-weight:700">CH 04 · 프로세스란 무엇인가</a> (PART B 시작)</p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '03 · 커널로 들어가는 세 문');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=200; let inner='';
+  inner+=OS.proc(40,30,{label:'앱',state:'run',w:64,h:36});
+  // attempts to cross at arbitrary point — blocked, only gate works
+  inner+=OS.arrow(110,48,200,48,{color:'var(--dead)',lw:1.4,dash:'4 3'});
+  inner+=`<text x="150" y="40" font-size="9" font-family="monospace" fill="var(--dead)">아무 데나 ✕</text>`;
+  // the gate
+  inner+=`<rect x="${W/2-32}" y="86" width="64" height="28" rx="6" fill="var(--panel)" stroke="var(--hot)" stroke-width="1.6"/><text x="${W/2}" y="104" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--hot)">핸들러</text>`;
+  inner+=OS.arrow(72,66,W/2-20,88,{color:'var(--good)',lw:1.6});
+  inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--v)">OS가 미리 정해둔 입구로만 진입</text>`;
+  document.getElementById('s0').innerHTML=OS.boundary({W,H,midY:96,inner});
+  document.getElementById('lab0').innerHTML='커널 진입은 <b style="color:var(--hot)">정해진 핸들러 주소</b>로만 점프해요. 앱이 입구를 고를 수 없어 벽이 그대로 유지돼요.';
+})();
+
+// ===== STEP 1 =====
+(function(){ let view='sys';
+  const meta={
+    sys:{who:'앱(소프트웨어)',init:'자발적 — 부탁',ex:'파일 읽기·메모리 요청·화면 출력',col:'var(--q)',label:'<b style="color:var(--q)">시스템콜</b>: 앱이 스스로 "이건 커널이 해줘"라고 부탁해요(파일·네트워크 등). 가장 흔한 문.'},
+    irq:{who:'하드웨어',init:'비동기 — 끼어듦',ex:'키 입력·타이머 만료·디스크 완료',col:'var(--dead)',label:'<b style="color:var(--dead)">인터럽트</b>: 하드웨어가 앱과 무관하게 끼어들어요. <b>타이머 인터럽트</b>는 뒤에서 OS가 CPU를 되찾는 열쇠가 돼요.'},
+    fault:{who:'실행 중 명령',init:'동기 — 사고',ex:'0으로 나눔·없는 메모리 접근',col:'var(--hot)',label:'<b style="color:var(--hot)">예외/폴트</b>: 명령을 실행하다 문제가 생겨요. <b>페이지 폴트</b>는 뒤 가상 메모리에서 "없는 페이지를 채워라"는 정상 신호로 쓰여요.'}
+  };
+  const tog=document.getElementById('gateTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?meta[view].col:'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const m=meta[view]; const W=460,H=200; let inner='';
+    if(view==='irq'){ inner+=OS.chip(77,50,'하드웨어',{color:m.col,minW:74,h:36,fs:11}); }
+    else { inner+=OS.proc(40,32,{label:'앱',state:'run',w:74,h:36}); }
+    if(view==='irq'){ inner+=OS.interrupt(80,86,W/2,118,{color:m.col,label:''}); }
+    else { inner+=OS.arrow(78,66,W/2-10,118,{color:m.col,lw:1.7}); }
+    inner+=`<rect x="${W/2-36}" y="120" width="72" height="28" rx="6" fill="var(--panel)" stroke="${m.col}" stroke-width="1.6"/><text x="${W/2}" y="138" text-anchor="middle" font-size="11" font-family="monospace" fill="${m.col}">핸들러</text>`;
+    // info card
+    inner+=`<text x="${W-20}" y="44" text-anchor="end" font-size="9.5" font-family="monospace" fill="var(--muted)">누가: <tspan fill="${m.col}">${m.who}</tspan></text>`;
+    inner+=`<text x="${W-20}" y="62" text-anchor="end" font-size="9.5" font-family="monospace" fill="var(--muted)">방식: <tspan fill="${m.col}">${m.init}</tspan></text>`;
+    inner+=`<text x="${W-20}" y="80" text-anchor="end" font-size="9" font-family="monospace" fill="var(--muted)">예: ${m.ex}</text>`;
+    document.getElementById('s1').innerHTML=OS.boundary({W,H,midY:104,inner});
+    document.getElementById('lab1').innerHTML=m.label;
+  }
+  render();
+})();
+
+// ===== STEP 2: entry sequence =====
+(function(){ const steps=[
+    {t:'① 모드 비트 → 커널', d:'CPU가 유저에서 커널 모드로 전환', hl:0},
+    {t:'② 돌아올 위치 저장', d:'지금 멈춘 지점(복귀 주소)을 보관', hl:1},
+    {t:'③ 핸들러 실행', d:'정해진 OS 코드로 점프해 일 처리', hl:2},
+    {t:'④ 유저로 복귀', d:'비트를 유저로 되돌리고 저장한 위치로', hl:3}
+  ];
+  let i=0;
+  const play=document.getElementById('play2');
+  play.innerHTML=`<button class="btn" id="prev2">◀ 이전</button><button class="btn" id="next2">다음 ▶</button><span class="note" id="cnt2" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=200; const st=steps[i]; let inner='';
+    inner+=OS.proc(40,32,{label:'앱',state:st.hl===3?'run':'wait',w:64,h:36});
+    // bit indicator
+    const inK=st.hl===0||st.hl===1||st.hl===2;
+    inner+=`<text x="${W/2}" y="22" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--muted)">모드: <tspan fill="${inK?'var(--v)':'var(--q)'}" font-weight="700">${inK?'커널':'유저'}</tspan></text>`;
+    // handler box
+    inner+=`<rect x="${W/2-36}" y="120" width="72" height="28" rx="6" fill="${st.hl===2?'var(--v)':'var(--panel)'}" stroke="var(--v)" stroke-width="1.4"/><text x="${W/2}" y="138" text-anchor="middle" font-size="11" font-family="monospace" fill="${st.hl===2?'#0b0e14':'var(--v)'}">핸들러</text>`;
+    if(st.hl===0||st.hl===1) inner+=OS.arrow(76,66,W/2-12,118,{color:'var(--hot)',lw:1.6});
+    if(st.hl===3) inner+=OS.arrow(W/2-12,134,76,72,{color:'var(--good)',lw:1.6});
+    // saved-context chip
+    if(st.hl>=1&&st.hl<=2) inner+=OS.chip(W-90,52,'복귀 위치 저장됨',{color:'var(--q)',minW:120,h:24});
+    document.getElementById('s2').innerHTML=OS.boundary({W,H,midY:104,inner});
+    document.getElementById('cnt2').textContent=`${i+1} / ${steps.length}`;
+    document.getElementById('lab2').innerHTML=`<b style="color:var(--hot)">${st.t}</b> — ${st.d}`;
+  }
+  document.getElementById('next2').onclick=()=>{ i=(i+1)%steps.length; render(); };
+  document.getElementById('prev2').onclick=()=>{ i=(i-1+steps.length)%steps.length; render(); };
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=150;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">세 문, 하나의 메커니즘</text>`;
+  const rows=[['시스템콜','앱이 자발적으로 부탁','var(--q)'],['인터럽트','하드웨어가 끼어듦 → 타이머가 스케줄링 열쇠(PART B)','var(--dead)'],['예외/폴트','명령이 사고 → 페이지 폴트가 가상 메모리 열쇠(PART C)','var(--hot)']];
+  rows.forEach((r,idx)=>{ const y=40+idx*32; s+=`<rect x="20" y="${y}" width="${W-40}" height="27" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+18}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+18}" fill="var(--ink)" font-size="8.6" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='이제 PART B로 — OS가 관리하는 첫 번째 추상, <b>프로세스</b>로 들어가요.';
+})();
+</script>
+</body>
+</html>

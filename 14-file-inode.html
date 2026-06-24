@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14 · 파일은 어떻게 저장되나 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--blue)">PART D · 파일과 저장 — CH 14</div>
+    <h1>파일은 어떻게 저장되나</h1>
+    <p class="intro">디스크는 작은 칸(<b>블록</b>)이 줄줄이 늘어선 것뿐 — "파일"은 OS가 그 위에 씌운 <b>가상화</b>예요(메모리의 페이지와 같은 발상). 파일 하나의 정보는 <b>아이노드</b>라는 장부에 담겨요: <b>메타데이터</b>(크기·권한)와 흩어진 <b>블록들의 위치</b>. <b>이름</b>은 또 다른 층 — 디렉터리가 "이름 → 아이노드"로 연결하죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 칸의 바다</button>
+    <button data-s="1">01 · 아이노드</button>
+    <button data-s="2">02 · 이름은 따로</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--blue)">Step 00 — A Sea of Blocks</span>
+    <h2>디스크엔 "파일"이 없어요</h2>
+    <p class="lead">디스크의 진짜 모습은 번호 붙은 작은 칸(블록)이 쭉 늘어선 거예요. "사진.jpg" 같은 건 디스크가 아는 게 아니라, OS가 만들어 주는 <b>환상</b>이죠. 메모리에서 가상 주소로 깔끔한 메모리를 보여줬듯, 저장에서도 파일이라는 깔끔한 단위를 보여줘요. 우리가 "한 파일"이라 부르는 내용은, 실제론 디스크 여기저기 흩어진 <b>여러 블록</b>일 수 있어요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 디스크 = 블록의 바다. "파일"은 OS가 그 위에 씌운 가상화.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — The inode</span>
+    <h2>파일의 신원증 — 아이노드</h2>
+    <p class="lead">파일 하나마다 <b>아이노드</b>라는 작은 장부가 있어요. 두 가지를 담죠: <b>메타데이터</b>(크기·권한·소유자·시간)와, 내용이 실제로 들어 있는 <b>블록들의 번호</b>(포인터 목록). 흩어진 블록 3·7·12에 내용이 있다면, 아이노드가 "내 블록은 3, 7, 12"라고 가리켜요. 그래서 아이노드만 따라가면 흩어진 조각을 순서대로 모아 파일 전체를 읽을 수 있어요 — 페이지 테이블이 페이지를 모았던 것과 똑같은 발상.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 아이노드 = 메타데이터 + 블록 포인터. 흩어진 블록을 한 파일로 묶는 장부.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--pink)">Step 02 — Names Are Separate</span>
+    <h2>이름은 디렉터리가 따로 관리</h2>
+    <p class="lead">재미있는 사실: 아이노드엔 파일 <b>이름이 없어요</b>. 이름은 <b>디렉터리</b>(폴더)가 따로 들고 있죠 — 디렉터리는 그냥 "이름 → 아이노드 번호" 목록이에요. 이 분리 덕에 한 파일(아이노드)에 <b>여러 이름</b>을 붙이거나, 이름만 바꿔도 내용은 그대로 둘 수 있어요. 토글로, 이름을 따라 아이노드를 찾고 다시 블록에 닿는 두 단계 연결을 보세요.</p>
+    <div class="toggles" id="nameTog">
+      <button data-v="one" class="on">이름 → 아이노드 → 블록</button>
+      <button data-v="two">한 파일, 두 이름</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 디렉터리=이름→아이노드 목록. 이름과 내용이 분리돼 유연해요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">파일은 <b>블록의 바다 위에 씌운 가상화</b>예요. 파일마다 <b>아이노드</b>가 메타데이터와 흩어진 블록의 위치를 들고 있고, <b>디렉터리</b>가 "이름→아이노드"를 따로 연결하죠. 가상 메모리의 페이지 테이블과 똑 닮은 구조 — 흩어진 조각을 표로 묶어 깔끔한 단위로 보여줘요. 그런데 이 블록들을 디스크에 <b>어떻게 배치</b>해야 빠르고 안전할까요? 그리고 아이노드 같은 장부 자체는 어디에 둘까요? 다음 챕터.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="15-disk-layout.html" style="color:var(--q);font-weight:700">CH 15 · 디스크 위의 살림 배치</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '14 · 파일과 아이노드');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=170; let s='';
+  s+=OS.blocks(30,60,12,{on:[],title:'디스크 — 번호 붙은 블록들'});
+  s+=`<text x="${W/2}" y="130" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--muted)">디스크가 아는 건 블록뿐 — "파일"은 OS의 환상</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'블록의 바다');
+  document.getElementById('lab0').innerHTML='디스크의 실체는 번호 붙은 <b style="color:var(--blue)">블록</b>의 줄. "한 파일"의 내용도 실제론 여러 블록에 흩어져 있을 수 있어요.';
+})();
+
+// ===== STEP 1 =====
+(function(){ const W=460,H=200; let s='';
+  s+=OS.inode(30,40,{label:'#12',meta:[['크기','12KB'],['권한','rw-'],['블록','3,7,12']]});
+  s+=OS.blocks(180,60,14,{on:[3,7,12],title:'디스크 블록 (내용 위치)'});
+  // pointers from inode to blocks
+  s+=OS.arrow(140,70,180+3*33+15,60,{color:'var(--q)',lw:1.2});
+  s+=OS.arrow(140,90,180+7*33+15,60,{color:'var(--q)',lw:1.2});
+  s+=OS.arrow(140,110,180+12*33+15,60,{color:'var(--q)',lw:1.2});
+  s+=`<text x="${W/2}" y="160" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">아이노드가 흩어진 블록 3·7·12를 가리킴</text>`;
+  document.getElementById('s1').innerHTML=OS.svg(W,H,s,'아이노드');
+  document.getElementById('lab1').innerHTML='<b style="color:var(--q)">아이노드</b>: 메타데이터 + 블록 포인터(3·7·12). 흩어진 조각을 따라가 파일 전체를 모아요 — 페이지 테이블과 같은 발상.';
+})();
+
+// ===== STEP 2 =====
+(function(){ let view='one';
+  const tog=document.getElementById('nameTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=200; let s='';
+    // directory
+    s+=`<rect x="20" y="40" width="130" height="${view==='two'?96:60}" rx="8" fill="var(--panel)" stroke="var(--pink)" stroke-width="1.4"/>`;
+    s+=`<text x="30" y="58" font-size="10" font-family="monospace" font-weight="700" fill="var(--pink)">디렉터리</text>`;
+    s+=`<text x="30" y="78" font-size="9.5" font-family="monospace" fill="var(--ink)">사진.jpg → #12</text>`;
+    if(view==='two') s+=`<text x="30" y="98" font-size="9.5" font-family="monospace" fill="var(--ink)">backup.jpg → #12</text>`;
+    // inode
+    s+=OS.inode(210,40,{label:'#12',meta:[['크기','12KB'],['블록','3,7,12']]});
+    s+=OS.arrow(150,72,210,70,{color:'var(--pink)',lw:1.4});
+    if(view==='two') s+=OS.arrow(150,94,210,82,{color:'var(--pink)',lw:1.4});
+    // blocks
+    s+=OS.blocks(210,150,8,{on:[3,7],title:''});
+    s+=OS.arrow(255,120,250,150,{color:'var(--q)',lw:1.2});
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'이름과 아이노드');
+    document.getElementById('lab2').innerHTML = view==='two'
+      ? '같은 아이노드 #12에 <b style="color:var(--pink)">두 이름</b>(사진·backup)을 붙였어요. 둘은 같은 내용을 가리켜요 — 이름과 내용이 분리됐으니 가능.'
+      : '<b style="color:var(--pink)">이름</b>(사진.jpg) → <b style="color:var(--q)">아이노드</b>(#12) → 블록. 디렉터리가 첫 화살표를, 아이노드가 둘째를 담당.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">파일 = 저장의 가상화</text>`;
+  const rows=[['아이노드','메타데이터 + 흩어진 블록의 위치','var(--q)'],['디렉터리','이름 → 아이노드 (내용과 분리)','var(--pink)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='블록을 디스크에 어떻게 배치할까 — 다음 챕터.';
+})();
+</script>
+</body>
+</html>

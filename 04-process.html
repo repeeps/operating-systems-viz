@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · 프로세스란 무엇인가 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART B · 프로세스와 스케줄링 — CH 04</div>
+    <h1>프로세스란 무엇인가</h1>
+    <p class="intro">디스크에 놓인 <b>프로그램</b>은 그냥 죽은 파일이에요. 그걸 <b>실행</b>하는 순간 살아 움직이는 것이 <b>프로세스</b>예요. 프로세스에는 자기만의 <b>주소 공간</b>(코드·데이터·힙·스택)과, 어디까지 실행했는지 같은 <b>실행 상태</b>가 따라붙죠. 같은 프로그램을 두 번 켜면 <b>서로 다른 두 프로세스</b>가 돼요. OS는 이 프로세스 하나하나를 <b>PCB</b>라는 장부로 관리하고, 상태(실행·준비·대기)를 옮겨가며 돌봐요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 프로그램 vs 프로세스</button>
+    <button data-s="1">01 · 무엇으로 이뤄지나</button>
+    <button data-s="2">02 · 세 가지 상태</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--good)">Step 00 — Dead File vs Living Thing</span>
+    <h2>실행하면 살아나요</h2>
+    <p class="lead">왼쪽은 디스크에 저장된 <b>프로그램</b> — 명령어 묶음일 뿐, 아무 일도 안 해요. 실행하면 OS가 메모리에 올리고 실행 상태를 붙여 <b>프로세스</b>로 만들어요. 핵심: 같은 프로그램을 두 번 켜면 <b>독립된 두 프로세스</b>가 생겨요. 각자 자기 주소 공간을 가져 서로를 못 건드리죠(PART A의 보호).</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 프로그램=정적 파일, 프로세스=실행 중인 인스턴스. 같은 파일 → 여러 프로세스.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — What's Inside</span>
+    <h2>프로세스의 구성요소</h2>
+    <p class="lead">프로세스 하나는 무엇으로 이뤄질까요. 토글로 보세요. 자기만의 <b>주소 공간</b>(코드·데이터·힙·스택)과, OS가 들고 있는 <b>실행 정보</b>(상태·다음에 실행할 위치·레지스터 값)예요. 이 실행 정보를 담은 OS의 장부가 <b>PCB</b>(프로세스 제어 블록)고, OS는 PCB만 보면 그 프로세스를 어디서든 이어 돌릴 수 있어요.</p>
+    <div class="toggles" id="compTog">
+      <button data-v="addr" class="on">주소 공간(메모리)</button>
+      <button data-v="pcb">PCB(실행 정보)</button>
+    </div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 메모리(주소공간) + 장부(PCB). PCB가 있어 멈췄다 다시 이어 돌릴 수 있어요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — Three States</span>
+    <h2>실행 · 준비 · 대기</h2>
+    <p class="lead">CPU는 하나뿐이라 한 순간엔 한 프로세스만 <b>실행</b>해요. 나머지 돌 준비된 것들은 <b>준비</b> 상태로 줄을 서고, 디스크·키 입력 등을 기다리는 것은 <b>대기</b> 상태예요. 버튼으로 한 프로세스를 따라가 보세요 — 실행 중 입력이 필요하면 대기로 빠지고, 입력이 오면 다시 준비로 돌아와 자기 차례를 기다려요.</p>
+    <div class="ctl" id="play2"></div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 실행(CPU 위)·준비(줄 섬)·대기(I/O 기다림). OS가 이 상태를 옮겨요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">프로세스는 <b>실행 중인 프로그램</b>이에요 — 자기 주소 공간 + 실행 상태(PCB)로 이뤄지고, 같은 프로그램도 켤 때마다 독립된 인스턴스가 돼요. 상태는 실행·준비·대기를 오가죠. 그런데 이 프로세스들은 어떻게 처음 <b>태어날까요</b>? 컴퓨터를 켠 직후엔 프로세스가 하나도 없을 텐데요. 다음 챕터에서 그 출생의 비밀을 봐요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="05-process-birth.html" style="color:var(--q);font-weight:700">CH 05 · 프로세스는 어떻게 태어나나</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '04 · 프로세스란 무엇인가');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: program vs process =====
+(function(){ const W=460,H=210; let s='';
+  // program on disk
+  s+=OS.disk(40,70,{w:80,h:50,label:'프로그램(파일)'});
+  s+=`<text x="80" y="60" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--slate)">정적·죽어있음</text>`;
+  s+=OS.arrow(130,95,200,95,{color:'var(--good)',lw:1.8});
+  s+=`<text x="165" y="86" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--good)">실행</text>`;
+  // two processes
+  s+=OS.proc(220,40,{label:'프로세스 #1',state:'run',w:130,h:42,sub:'실행 중'});
+  s+=OS.proc(220,110,{label:'프로세스 #2',state:'ready',w:130,h:42,sub:'같은 프로그램, 다른 인스턴스'});
+  s+=`<text x="360" y="62" font-size="9" font-family="monospace" fill="var(--muted)">독립</text>`;
+  s+=`<text x="360" y="132" font-size="9" font-family="monospace" fill="var(--muted)">독립</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'프로그램 vs 프로세스');
+  document.getElementById('lab0').innerHTML='왼쪽 <b style="color:var(--slate)">프로그램</b>은 디스크의 정적 파일. 실행하면 메모리 위 <b style="color:var(--good)">프로세스</b>로 살아나요. 두 번 켜면 독립된 두 프로세스.';
+})();
+
+// ===== STEP 1: components =====
+(function(){ let view='addr';
+  const tog=document.getElementById('compTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=230;
+    if(view==='addr'){
+      let s=OS.addrSpace(180,28,{w:110,H:170,title:'이 프로세스의 주소 공간'});
+      document.getElementById('s1').innerHTML=OS.svg(W,H,s,'주소 공간');
+      document.getElementById('lab1').innerHTML='<b style="color:var(--q)">주소 공간</b>: 코드(명령어)·데이터·힙(동적 할당)·스택(함수 호출)이 한 프로세스 메모리 안에 모여 있어요. 다른 프로세스는 못 들여다봐요.';
+    } else {
+      let s=OS.pcb(W/2-75,40,{pid:1,rows:[['상태','실행(run)'],['다음 실행 위치','0x4A2C'],['레지스터','저장된 값들'],['주소공간','페이지표 0x…'],['열린 파일','3개']]});
+      document.getElementById('s1').innerHTML=OS.svg(W,H,s,'PCB');
+      document.getElementById('lab1').innerHTML='<b style="color:var(--v)">PCB</b>: OS가 프로세스마다 들고 있는 장부. 상태·다음 실행 위치·레지스터 값이 적혀 있어, 멈춰도 이걸 보면 그대로 이어 돌릴 수 있어요.';
+    }
+  }
+  render();
+})();
+
+// ===== STEP 2: states =====
+(function(){ const states=[
+    {st:'run',  t:'실행(run)', d:'CPU를 차지하고 명령을 실행 중', q:false, io:false},
+    {st:'wait', t:'대기(wait)', d:'입력·디스크 등을 기다리는 중 — CPU를 놓음', q:false, io:true},
+    {st:'ready',t:'준비(ready)', d:'돌 준비 끝, CPU 차례를 기다리며 줄 섬', q:true, io:false},
+    {st:'run',  t:'다시 실행(run)', d:'차례가 와서 CPU를 다시 차지', q:false, io:false}
+  ];
+  let i=0;
+  const play=document.getElementById('play2');
+  play.innerHTML=`<button class="btn" id="prev2">◀ 이전</button><button class="btn" id="next2">다음 ▶</button><span class="note" id="cnt2" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=200; const cur=states[i]; let s='';
+    // CPU slot top
+    s+=`<rect x="${W/2-55}" y="20" width="110" height="42" rx="9" fill="${cur.st==='run'?'var(--good)':'var(--panel)'}" opacity="${cur.st==='run'?0.9:1}" stroke="var(--good)" stroke-width="1.6"/><text x="${W/2}" y="46" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="${cur.st==='run'?'#0b0e14':'var(--good)'}">CPU</text>`;
+    // process box, positioned by state
+    let px=W/2-32, py=110, pstate=cur.st;
+    if(cur.st==='run'){ s+=OS.arrow(W/2,62,W/2,108,{color:'var(--good)',lw:1.6}); }
+    s+=OS.proc(px,py,{label:'내 프로세스',state:pstate,w:120,h:40,sub:cur.t});
+    // ready queue
+    s+=OS.proc(40,150,{label:'',state:'ready',w:30,h:24}); s+=OS.proc(76,150,{label:'',state:'ready',w:30,h:24});
+    s+=`<text x="40" y="143" font-size="8.5" font-family="monospace" fill="var(--q)">준비 큐</text>`;
+    // io
+    s+=OS.disk(370,140,{w:60,h:36,label:'I/O'});
+    if(cur.io) s+=OS.arrow(px+120,py+20,370,158,{color:'var(--hot)',lw:1.5,dash:'4 3'});
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'프로세스 상태');
+    document.getElementById('cnt2').textContent=`${i+1} / ${states.length}`;
+    document.getElementById('lab2').innerHTML=`<b style="color:var(--hot)">${cur.t}</b> — ${cur.d}`;
+  }
+  document.getElementById('next2').onclick=()=>{ i=(i+1)%states.length; render(); };
+  document.getElementById('prev2').onclick=()=>{ i=(i-1+states.length)%states.length; render(); };
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">프로세스 = 실행 중인 프로그램</text>`;
+  const rows=[['구성','주소 공간(메모리) + 실행 상태(PCB)','var(--q)'],['상태','실행 · 준비 · 대기 사이를 OS가 옮김','var(--good)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9.5" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='그럼 첫 프로세스는 어떻게 태어날까 — 다음 챕터.';
+})();
+</script>
+</body>
+</html>

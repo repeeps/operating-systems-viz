@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · 프로세스는 어떻게 태어나나 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART B · 프로세스와 스케줄링 — CH 05</div>
+    <h1>프로세스는 어떻게 태어나나</h1>
+    <p class="intro">새 프로세스는 무에서 솟지 않아요 — 기존 프로세스가 자신을 <b>복제</b>해서 만들어요. 부모가 <b>똑같은 사본</b>(자식)을 하나 찍어내고, 그 자식이 자신의 내용을 <b>다른 프로그램으로 갈아끼우면</b> 새 프로세스가 돼요. 이 "복제→갈아끼우기"가 반복되며 모든 프로세스가 하나의 <b>나무</b>로 이어져요. 컴퓨터를 켜면 OS가 첫 뿌리 프로세스를 세우고, 거기서 모두가 뻗어 나오죠.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 복제로 시작</button>
+    <button data-s="1">01 · 두 단계</button>
+    <button data-s="2">02 · 프로세스 나무</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--good)">Step 00 — Born by Copying</span>
+    <h2>부모가 자신을 복제해요</h2>
+    <p class="lead">새 프로세스를 만드는 가장 기본 방법은 <b>복제</b>예요. 어떤 프로세스(부모)가 "나를 하나 더 만들어줘"라고 OS에 부탁하면, OS는 부모와 거의 똑같은 사본(자식)을 만들어요. 이 순간 둘은 내용이 같지만, 그때부터는 <b>독립된 별개</b>의 프로세스로 따로 살아가요. 갓 태어난 자식은 보통 곧바로 자기 일을 갈아끼워요(다음 단계).</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 새 프로세스 = 기존 프로세스의 복제. 복제 직후 둘은 독립.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Two Steps</span>
+    <h2>복제하고, 갈아끼우기</h2>
+    <p class="lead">새 프로그램을 띄우는 일은 보통 두 단계예요. ① <b>복제</b>: 부모가 자기 사본인 자식을 만들어요. ② <b>갈아끼우기</b>: 그 자식이 자기 메모리 내용을 <b>실행할 새 프로그램으로 통째로 교체</b>해요(코드·데이터가 새 것으로 바뀜). 왜 한 번에 안 하고 둘로 나눌까요? 복제 직후·교체 전의 짧은 틈에 부모가 자식의 환경을 손봐줄 수 있기 때문이에요.</p>
+    <div class="ctl" id="play1"></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ ① 복제(사본 생성) → ② 갈아끼우기(새 프로그램으로 교체). 둘로 나뉜 게 유연함의 핵심.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — The Process Tree</span>
+    <h2>모두가 한 나무에서</h2>
+    <p class="lead">복제가 복제를 낳으니, 모든 프로세스는 부모-자식으로 이어진 하나의 <b>나무</b>를 이뤄요. 컴퓨터를 켜면 OS가 가장 먼저 <b>뿌리 프로세스</b> 하나를 세우고, 거기서 로그인·서비스·앱들이 가지처럼 뻗어 나오죠. 어떤 프로세스가 끝나면 그 자리만 정리되고 나무는 계속 자라요. 토글로 뿌리부터 잎까지 펼쳐 보세요.</p>
+    <div class="toggles" id="treeTog">
+      <button data-v="root" class="on">뿌리(부팅 직후)</button>
+      <button data-v="grow">가지가 뻗음</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 부팅 시 뿌리 하나 → 복제로 가지가 뻗음. 전체가 하나의 가계도.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">프로세스는 <b>복제</b>로 태어나요 — 부모가 사본(자식)을 만들고, 자식이 자기 내용을 새 프로그램으로 <b>갈아끼우면</b> 새 프로세스 완성. 모든 프로세스는 부팅 때 세워진 뿌리에서 뻗은 <b>나무</b>로 이어지죠. 이제 프로세스가 여럿 생겼어요. 하지만 CPU는 하나뿐 — 어떻게 여럿이 <b>동시에 도는 것처럼</b> 보일까요? 비밀은 OS가 눈 깜짝할 새 CPU의 주인을 바꿔치기하는 데 있어요. 다음 챕터.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="06-context-switch.html" style="color:var(--q);font-weight:700">CH 06 · 한 CPU로 여럿을 — 문맥 전환</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '05 · 프로세스의 탄생');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: clone =====
+(function(){ const W=460,H=180; let s='';
+  s+=OS.proc(40,70,{label:'부모',state:'run',w:90,h:44});
+  s+=OS.arrow(135,92,250,60,{color:'var(--good)',lw:1.7});
+  s+=OS.arrow(135,92,250,124,{color:'var(--good)',lw:1.5,dash:'4 3'});
+  s+=`<text x="180" y="58" font-size="9" font-family="monospace" fill="var(--good)">계속</text>`;
+  s+=`<text x="180" y="138" font-size="9" font-family="monospace" fill="var(--q)">복제!</text>`;
+  s+=OS.proc(255,40,{label:'부모',state:'run',w:90,h:40,sub:'그대로'});
+  s+=OS.proc(255,108,{label:'자식',state:'ready',w:90,h:40,sub:'똑같은 사본'});
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'복제');
+  document.getElementById('lab0').innerHTML='<b style="color:var(--good)">부모</b>가 OS에 부탁하면 거의 똑같은 <b style="color:var(--q)">자식</b> 사본이 생겨요. 이 순간부터 둘은 독립.';
+})();
+
+// ===== STEP 1: fork + exec =====
+(function(){ const steps=[
+    {t:'시작 — 부모만', d:'부모 프로세스가 새 프로그램을 띄우려 함', stage:0},
+    {t:'① 복제', d:'부모의 사본인 자식이 생김(내용 동일)', stage:1},
+    {t:'② 갈아끼우기', d:'자식이 자기 메모리를 새 프로그램으로 교체', stage:2}
+  ];
+  let i=0;
+  const play=document.getElementById('play1');
+  play.innerHTML=`<button class="btn" id="prev1">◀ 이전</button><button class="btn" id="next1">다음 ▶</button><span class="note" id="cnt1" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=190; const st=steps[i]; let s='';
+    s+=OS.proc(50,70,{label:'부모',state:'run',w:90,h:46,sub:'기존 프로그램'});
+    if(st.stage>=1){
+      s+=OS.arrow(145,93,250,93,{color:'var(--good)',lw:1.6});
+      const childNew=st.stage>=2;
+      s+=OS.proc(255,70,{label:'자식',state:childNew?'run':'ready',w:120,h:46,sub:childNew?'새 프로그램으로 교체됨':'부모의 사본(동일)'});
+      if(childNew){ s+=`<text x="315" y="58" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--hot)">코드·데이터 통째 교체</text>`; }
+    }
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'복제·교체');
+    document.getElementById('cnt1').textContent=`${i+1} / ${steps.length}`;
+    document.getElementById('lab1').innerHTML=`<b style="color:var(--q)">${st.t}</b> — ${st.d}`;
+  }
+  document.getElementById('next1').onclick=()=>{ i=(i+1)%steps.length; render(); };
+  document.getElementById('prev1').onclick=()=>{ i=(i-1+steps.length)%steps.length; render(); };
+  render();
+})();
+
+// ===== STEP 2: tree =====
+(function(){ let view='root';
+  const tog=document.getElementById('treeTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=210; let s='';
+    s+=OS.proc(W/2-45,16,{label:'뿌리',state:'run',w:90,h:36,sub:'부팅 때 OS가 세움'});
+    if(view==='grow'){
+      const kids=[['로그인',120],['서비스',230],['시스템',340]];
+      kids.forEach(k=>{ s+=OS.arrow(W/2,52,k[1],90,{color:'var(--v)',lw:1.3}); s+=OS.proc(k[1]-40,90,{label:k[0],state:'ready',w:80,h:32}); });
+      // grandchildren
+      const g=[['앱 A',90],['앱 B',150],['셸',300]];
+      g.forEach((gg,idx)=>{ const parentX=idx<2?120:230; s+=OS.arrow(parentX,122,gg[1],158,{color:'var(--q)',lw:1.2}); s+=OS.proc(gg[1]-32,158,{label:gg[0],state:'ready',w:64,h:28}); });
+      document.getElementById('lab2').innerHTML='뿌리에서 복제가 거듭돼 <b style="color:var(--v)">가지</b>가 뻗어요. 모든 프로세스가 부모-자식으로 한 가계도에 연결.';
+    } else {
+      s+=`<text x="${W/2}" y="100" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--muted)">부팅 직후 — 뿌리 하나뿐</text>`;
+      document.getElementById('lab2').innerHTML='컴퓨터를 켜면 OS가 <b style="color:var(--good)">뿌리 프로세스</b> 하나를 먼저 세워요. 모든 프로세스의 조상.';
+    }
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'프로세스 나무');
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">복제 → 갈아끼우기 → 나무</text>`;
+  const rows=[['탄생','부모를 복제 → 자식이 새 프로그램으로 교체','var(--q)'],['구조','부팅 뿌리에서 뻗은 하나의 프로세스 나무','var(--v)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='CPU는 하나인데 어떻게 여럿이 동시에? — 다음, 문맥 전환.';
+})();
+</script>
+</body>
+</html>

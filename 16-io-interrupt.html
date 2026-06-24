@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>16 · 느린 장치와 대화하기 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--blue)">PART D · 파일과 저장 — CH 16</div>
+    <h1>느린 장치와 대화하기</h1>
+    <p class="intro">디스크·키보드 같은 장치는 CPU보다 <b>까마득히 느려요</b>. 답이 올 때까지 가만히 지켜보면(<b>폴링</b>) CPU가 통째로 놀죠. 더 나은 길은 <b>인터럽트</b>(CH03) — "다 되면 알려줘" 해두고 CPU는 <b>다른 일</b>을 하다가, 완료 알림이 오면 결과를 챙겨요. 기다리던 프로세스는 대기로 비켜주고(CH04), CPU는 쉬지 않아요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 속도 차이</button>
+    <button data-s="1">01 · 지켜보기(낭비)</button>
+    <button data-s="2">02 · 알려줘(인터럽트)</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--blue)">Step 00 — A Huge Speed Gap</span>
+    <h2>CPU는 빠르고 장치는 느려요</h2>
+    <p class="lead">CPU가 명령 하나를 처리하는 시간에, 디스크는 아직 팔을 움직이지도 못해요. 둘의 속도 차는 비유하자면 "눈 깜짝" 대 "한참 기다림" 수준이에요. 그래서 CPU가 디스크에 일을 시키고 결과를 그냥 기다리면, 그 사이 처리할 수 있었던 수많은 일을 날리는 셈이죠. 핵심 질문: <b>기다리는 동안 CPU를 어떻게 안 놀릴까?</b></p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ CPU ≫ 장치 속도. 그냥 기다리면 그 시간만큼 통째로 낭비.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--hot)">Step 01 — Polling Wastes</span>
+    <h2>계속 지켜보기 — 낭비</h2>
+    <p class="lead">가장 단순한 방법: CPU가 "다 됐니? 다 됐니?" 하고 <b>쉴 새 없이 물어보며</b> 기다려요(폴링). 답은 확실히 챙기지만, 그 긴 기다림 내내 CPU는 <b>물어보는 일만</b> 하느라 다른 일을 못 해요. 짧은 대기라면 몰라도, 디스크처럼 느린 장치엔 엄청난 낭비죠. 간트로 CPU가 기다림에 통째로 묶이는 걸 보세요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 폴링: 답은 받지만 기다리는 내내 CPU가 묶여 놀아요.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--good)">Step 02 — Interrupt-Driven</span>
+    <h2>"다 되면 알려줘"</h2>
+    <p class="lead">더 똑똑한 방법: CPU가 디스크에 일을 시킨 뒤 "<b>끝나면 인터럽트로 알려줘</b>"라 하고 손을 떼요. 기다리던 프로세스는 <b>대기 상태</b>로 비키고(CH04), CPU는 그동안 <b>다른 프로세스</b>를 돌려요. 디스크가 다 하면 <b>인터럽트</b>(CH03의 하드웨어 문)를 일으켜 CPU를 부르고, OS가 결과를 챙겨 기다리던 프로세스를 다시 준비 상태로 깨우죠. 토글로 폴링과 나란히 비교하세요 — 같은 시간에 CPU가 얼마나 더 일하는지.</p>
+    <div class="toggles" id="modeTog">
+      <button data-v="irq" class="on">인터럽트 방식</button>
+      <button data-v="poll">폴링 방식</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 인터럽트: 시켜놓고 다른 일 → 완료 알림 받고 챙김. CPU가 안 놀아요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">느린 장치를 그냥 지켜보면(<b>폴링</b>) CPU가 통째로 놀아요. <b>인터럽트 방식</b>은 일을 시켜놓고 CPU를 다른 일에 쓰다가, 장치가 완료를 알리면 결과를 챙기죠 — CH03의 인터럽트, CH04의 대기 상태, CH06의 문맥 전환이 여기서 한데 맞물려요. 이로써 OS의 큰 그림이 거의 다 모였어요: 프로세스로 일을 나누고, 메모리를 가상으로 주고, 파일로 저장하고, 장치와 효율적으로 대화하죠. 다음 PART는 이 조각들이 <b>한 번의 동작에서 어떻게 협력</b>하는지 꿰어 봐요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 PART E → <a href="17-syscall-life.html" style="color:var(--q);font-weight:700">CH 17 · 한 줄의 여정 — 모두가 협력</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '16 · 느린 장치와 대화');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=160; let s='';
+  s+=OS.proc(40,50,{label:'CPU',state:'run',w:90,h:44,sub:'눈 깜짝'});
+  s+=OS.disk(310,46,{w:90,h:50,label:'디스크 — 한참'});
+  s+=`<text x="${W/2}" y="60" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--muted)">속도 차이</text>`;
+  s+=`<text x="${W/2}" y="80" text-anchor="middle" font-size="13" font-family="monospace" font-weight="700" fill="var(--hot)">≫ 엄청남</text>`;
+  s+=`<text x="${W/2}" y="130" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">그냥 기다리면 그 시간만큼 CPU 낭비</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'속도 차이');
+  document.getElementById('lab0').innerHTML='CPU 한 동작 시간에 디스크는 시작도 못 해요. 이 큰 격차 때문에 "기다리는 동안 뭘 할까"가 핵심 문제.';
+})();
+
+// ===== STEP 1: polling =====
+(function(){ const segs=[
+    {label:'요청',dur:1,color:'var(--q)'},
+    {label:'다 됐니? (계속 물음 — 낭비)',dur:8,color:'var(--dead)'},
+    {label:'결과',dur:1,color:'var(--good)'}
+  ];
+  document.getElementById('s1').innerHTML=OS.gantt({W:460,H:96,segs,tmax:10,title:'폴링 — CPU 타임라인'});
+  document.getElementById('lab1').innerHTML='요청 뒤 결과까지 CPU가 "<b style="color:var(--dead)">다 됐니?</b>"만 반복하며 묶여 있어요. 긴 빨간 구간이 통째로 낭비.';
+})();
+
+// ===== STEP 2: interrupt vs poll =====
+(function(){ let view='irq';
+  const tog=document.getElementById('modeTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460;
+    let segs, title, useful;
+    if(view==='irq'){
+      segs=[{label:'요청',dur:1,color:'var(--q)'},{label:'다른 프로세스 실행',dur:8,color:'var(--good)'},{label:'완료 알림→챙김',dur:1,color:'var(--v)'}];
+      title='인터럽트 — CPU 타임라인'; useful=9;
+    } else {
+      segs=[{label:'요청',dur:1,color:'var(--q)'},{label:'기다림(낭비)',dur:8,color:'var(--dead)'},{label:'결과',dur:1,color:'var(--good)'}];
+      title='폴링 — CPU 타임라인'; useful=2;
+    }
+    let html=OS.gantt({W,H:96,segs,tmax:10,title});
+    html+=`<div style="margin-top:8px;font-family:monospace;font-size:11px;color:var(--muted)">10칸 중 실제 일한 시간: <b style="color:${useful>5?'var(--good)':'var(--hot)'}">${useful}칸</b></div>`;
+    document.getElementById('s2').innerHTML=html;
+    document.getElementById('lab2').innerHTML = view==='irq'
+      ? '시켜놓고 그 8칸 동안 <b style="color:var(--good)">다른 프로세스</b>를 돌려요. 디스크가 인터럽트로 알리면(보라) 결과를 챙김 — CPU가 거의 안 놀아요.'
+      : '폴링은 그 8칸을 통째로 버려요. 인터럽트 방식과 비교해 보세요.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">시켜놓고 다른 일, 알림 받고 챙김</text>`;
+  const rows=[['폴링','계속 지켜봄 → CPU 통째 낭비','var(--dead)'],['인터럽트','대기로 비키고 다른 일 → 완료 알림','var(--good)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='이 조각들이 한 동작에서 어떻게 협력할까 — 다음 PART E.';
+})();
+</script>
+</body>
+</html>

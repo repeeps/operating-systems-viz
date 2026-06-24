@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18 · 여기서 더 나아가면 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART E · 큰 그림 — CH 18</div>
+    <h1>여기서 더 나아가면</h1>
+    <p class="intro">이 코스는 OS의 <b>핵심 직관</b> — 프로세스·스케줄링·가상 메모리·파일·입출력 — 을 그림으로 잡았어요. 하지만 운영체제는 더 넓어요. 여기서는 다루지 않은 큰 주제들을 짧게 가리켜, 다음에 무엇을 공부하면 좋을지 <b>지도</b>를 그려요. 각 주제는 지금까지 배운 개념의 자연스러운 확장이에요 — "여럿이 동시에" 하면 생기는 문제들, 프로세스끼리 대화하는 법, 한 대를 여러 대처럼 쪼개는 가상화까지.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 동시에 다루면</button>
+    <button data-s="1">01 · 프로세스끼리 대화</button>
+    <button data-s="2">02 · 더 넓은 지도</button>
+    <button data-s="3">03 · 마치며</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--hot)">Step 00 — When Many Share</span>
+    <h2>여럿이 같은 걸 동시에 건드리면</h2>
+    <p class="lead">CH06에서 여러 프로세스가 번갈아 돈다고 했죠. 그럼 <b>같은 데이터</b>를 둘이 동시에 고치려 하면? 한쪽이 읽고 고치는 중에 끼어들면 결과가 엉켜요(경쟁 상태). OS와 프로그램은 이를 막으려 "한 번에 하나만 들어가는 문"(<b>잠금</b>)을 둬요. 하지만 잠금을 잘못 쓰면 서로의 자물쇠를 기다리다 둘 다 멈추는 <b>교착</b>도 생기죠. 이 <b>동시성</b>은 OS의 가장 까다롭고 깊은 주제예요.</p>
+    <div class="toggles" id="concTog">
+      <button data-v="race" class="on">경쟁 상태</button>
+      <button data-v="lock">잠금으로 보호</button>
+    </div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 동시 접근 → 경쟁 상태. 잠금으로 보호하되, 잘못 쓰면 교착. (깊은 주제)</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Talking Between Processes</span>
+    <h2>격리됐는데 어떻게 협력하지</h2>
+    <p class="lead">CH09에서 프로세스는 서로의 메모리를 못 본다고 했죠(격리). 그럼 둘이 <b>협력</b>해야 할 땐? OS가 안전한 <b>대화 통로</b>를 빌려줘요 — 한쪽이 흘려보낸 데이터를 다른 쪽이 받는 <b>파이프</b>, 또는 둘이 공유하기로 약속한 메모리 한 조각 등. 격리는 지키면서 필요한 만큼만 주고받게 하는 거죠. 명령들을 이어 붙이는 그 익숙한 "|" 기호 뒤에도 이 통로가 있어요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 프로세스 간 통신(IPC): 파이프·공유 메모리 등. 격리는 유지, 통로만 빌려줌.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — A Wider Map</span>
+    <h2>더 넓은 주제들</h2>
+    <p class="lead">OS의 지도엔 더 많은 영역이 있어요. 토글로 둘러보세요. <b>멀티코어</b>: CPU가 여러 개면 진짜로 동시에 돌릴 수 있고, 스케줄링·동시성이 더 복잡해져요. <b>가상화</b>: 한 컴퓨터 안에 가상의 컴퓨터(가상 머신)나 가벼운 격리 상자(컨테이너)를 여러 개 만들어요 — 가상 메모리의 발상을 컴퓨터 전체로 확장한 거죠. <b>보안</b>: 권한·격리를 더 촘촘히 해 악의적 접근을 막아요.</p>
+    <div class="toggles" id="mapTog">
+      <button data-v="multi" class="on">멀티코어</button>
+      <button data-v="virt">가상화</button>
+      <button data-v="sec">보안</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 멀티코어·가상화·보안 — 모두 배운 개념(스케줄링·가상 메모리·격리)의 확장.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Wrapping Up</span>
+    <h2>마치며</h2>
+    <p class="lead">여기까지 운영체제의 큰 그림을 함께 봤어요 — 프로그램을 살아있는 <b>프로세스</b>로 만들고, 한 CPU를 시간으로 나눠(<b>스케줄링</b>), 메모리를 가상으로 주고(<b>가상 메모리</b>), 데이터를 <b>파일</b>로 남기고, 느린 장치와 <b>인터럽트</b>로 대화하죠. 그리고 그 모두가 "파일 읽기" 한 줄에서 <b>협력</b>하는 걸 봤고요. 이 직관을 손에 쥐었으니, 동시성·IPC·가상화 같은 다음 주제도 "또 다른 가상화, 또 다른 보호"로 자연스럽게 읽힐 거예요. 수고했어요.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ <a href="index.html" style="color:var(--q);font-weight:700">목차로 돌아가기</a> · 다른 챕터 다시 보기</p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '18 · 여기서 더 나아가면');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: concurrency =====
+(function(){ let view='race';
+  const tog=document.getElementById('concTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=190; let s='';
+    s+=OS.proc(40,40,{label:'프로세스 A',state:'run',w:110,h:38});
+    s+=OS.proc(40,120,{label:'프로세스 B',state:'run',w:110,h:38});
+    // shared data
+    s+=`<rect x="300" y="74" width="120" height="44" rx="9" fill="var(--panel)" stroke="${view==='lock'?'var(--good)':'var(--dead)'}" stroke-width="1.8"/><text x="360" y="92" text-anchor="middle" font-size="10" font-family="monospace" font-weight="700" fill="${view==='lock'?'var(--good)':'var(--dead)'}">공유 데이터</text><text x="360" y="108" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--muted)">잔액 = 100</text>`;
+    if(view==='race'){
+      s+=OS.arrow(150,59,300,86,{color:'var(--dead)',lw:1.5});
+      s+=OS.arrow(150,139,300,106,{color:'var(--dead)',lw:1.5});
+      s+=`<text x="225" y="160" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--dead)">동시에 고침 → 결과 엉킴(경쟁 상태)</text>`;
+      document.getElementById('lab0').innerHTML='A와 B가 <b style="color:var(--dead)">동시에</b> 잔액을 고치면, 한쪽 변경이 묻혀 결과가 틀려요(경쟁 상태). 끼어드는 타이밍에 따라 매번 달라지죠.';
+    } else {
+      s+=`<rect x="250" y="64" width="30" height="64" rx="5" fill="var(--good)" opacity="0.25" stroke="var(--good)"/><text x="265" y="100" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--good)">🔒</text>`;
+      s+=OS.arrow(150,59,250,86,{color:'var(--good)',lw:1.5});
+      s+=OS.arrow(150,139,250,110,{color:'var(--slate)',lw:1.3,dash:'4 3'});
+      s+=`<text x="225" y="160" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--good)">한 번에 하나만 통과 → B는 잠깐 대기</text>`;
+      document.getElementById('lab0').innerHTML='<b style="color:var(--good)">잠금</b>으로 "한 번에 하나만" 들어가게 하면 안전해요. 단, 서로의 자물쇠를 기다리면 둘 다 멈추는 <b>교착</b>이 생길 수 있어 조심.';
+    }
+    document.getElementById('s0').innerHTML=OS.svg(W,H,s,'동시성');
+  }
+  render();
+})();
+
+// ===== STEP 1: IPC =====
+(function(){ const W=460,H=180; let s='';
+  s+=OS.proc(40,70,{label:'프로세스 A',state:'run',w:110,h:44});
+  s+=OS.proc(310,70,{label:'프로세스 B',state:'ready',w:110,h:44});
+  // pipe
+  s+=`<rect x="165" y="84" width="130" height="16" rx="8" fill="var(--panel)" stroke="var(--q)" stroke-width="1.4"/>`;
+  s+=`<text x="230" y="78" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--q)">파이프(통로)</text>`;
+  s+=OS.arrow(150,92,165,92,{color:'var(--q)',lw:1.6});
+  s+=OS.arrow(295,92,310,92,{color:'var(--q)',lw:1.6});
+  s+=`<text x="230" y="130" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">A가 보낸 데이터를 B가 받음 — 메모리는 여전히 격리</text>`;
+  document.getElementById('s1').innerHTML=OS.svg(W,H,s,'IPC');
+  document.getElementById('lab1').innerHTML='격리된 두 프로세스가 <b style="color:var(--q)">파이프</b> 같은 통로로 데이터를 주고받아요. 익숙한 "|"로 명령을 잇는 것도 이 통로 덕분.';
+})();
+
+// ===== STEP 2: wider map =====
+(function(){ let view='multi';
+  const tog=document.getElementById('mapTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=180; let s='';
+    if(view==='multi'){
+      ['코어1','코어2','코어3','코어4'].forEach((c,i)=>{ s+=OS.proc(40+i*100,70,{label:c,state:'run',w:80,h:44}); });
+      s+=`<text x="${W/2}" y="140" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--good)">코어마다 다른 프로세스 → 진짜 동시 실행</text>`;
+      document.getElementById('lab2').innerHTML='<b style="color:var(--good)">멀티코어</b>: CPU가 여러 개면 동시에 여러 프로세스를 진짜로 돌려요. 스케줄링·동시성이 더 까다로워지죠.';
+    } else if(view==='virt'){
+      s+=`<rect x="40" y="40" width="${W-80}" height="100" rx="10" fill="var(--panel)" stroke="var(--v)" stroke-width="1.4"/><text x="56" y="60" font-size="10" font-family="monospace" fill="var(--v)">한 대의 진짜 컴퓨터</text>`;
+      ['가상 머신 A','가상 머신 B','컨테이너 C'].forEach((v,i)=>{ s+=OS.proc(60+i*130,80,{label:v,state:'ready',w:110,h:40}); });
+      document.getElementById('lab2').innerHTML='<b style="color:var(--v)">가상화</b>: 한 컴퓨터 안에 가상의 컴퓨터·격리 상자를 여러 개. 가상 메모리의 발상을 <b>컴퓨터 전체</b>로 넓힌 셈.';
+    } else {
+      s+=OS.boundary({W,H:150,midY:80,inner:`<text x="${W/2}" y="50" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--q)">권한 확인·격리·검증</text><text x="${W/2}" y="120" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--v)">악의적 접근 차단</text>`});
+      document.getElementById('lab2').innerHTML='<b style="color:var(--v)">보안</b>: 배운 권한·격리(모드 비트·페이지 권한·파일 권한)를 더 촘촘히 엮어 공격을 막아요.';
+    }
+    if(view!=='sec') document.getElementById('s2').innerHTML=OS.svg(W,H,s,'더 넓은 지도');
+    else document.getElementById('s2').innerHTML=s;
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=150;
+  let s=`<text x="${W/2}" y="24" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--good)">운영체제, 눈으로 보기 — 끝</text>`;
+  const rows=[['배운 것','프로세스·스케줄링·가상 메모리·파일·I/O','var(--q)'],['핵심','모두가 한 동작에서 협력','var(--good)'],['다음','동시성·IPC·가상화 = 또 다른 가상화/보호','var(--v)']];
+  rows.forEach((r,idx)=>{ const y=42+idx*32; s+=`<rect x="20" y="${y}" width="${W-40}" height="27" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+18}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+18}" fill="var(--ink)" font-size="8.4" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'마치며');
+  document.getElementById('lab3').innerHTML='이 직관을 발판 삼아 더 깊은 OS의 세계로. 수고했어요 👏';
+})();
+</script>
+</body>
+</html>

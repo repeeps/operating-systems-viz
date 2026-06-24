@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · 커널 모드 vs 유저 모드 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--q)">PART A · 보호의 경계 — CH 02</div>
+    <h1>커널 모드 vs 유저 모드</h1>
+    <p class="intro">보호의 핵심은 CPU의 <b>모드 비트</b> 하나예요. <b>유저 모드</b>(앱이 도는 곳)에서는 위험한 명령 — 하드웨어 직접 제어, 남의 메모리 접근, CPU 독점 — 이 <b>금지</b>돼요. 그런 일은 <b>커널 모드</b>(OS만)에서만 가능하죠. 앱이 유저 모드에서 특권 명령을 시도하면 CPU가 막고 커널로 넘겨요. 이 "특권의 벽" 덕에 앱 하나가 시스템 전체를 망가뜨릴 수 없어요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 특권의 벽</button>
+    <button data-s="1">01 · 벽을 넘으려 하면</button>
+    <button data-s="2">02 · 단 하나의 비트</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--q)">Step 00 — The Privilege Wall</span>
+    <h2>유저 위, 커널 아래, 사이엔 벽</h2>
+    <p class="lead">CPU는 늘 둘 중 한 모드로 돌아요. <b>유저 모드</b>: 앱이 사는 곳 — 평범한 계산은 자유롭지만 위험한 일은 막혀요. <b>커널 모드</b>: OS만 들어가는 곳 — 하드웨어를 직접 다루고 모든 메모리를 봐요. 둘 사이엔 <b>특권의 벽</b>이 있고, 넘는 문은 정해진 곳뿐이에요(다음 챕터).</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 앱=유저 모드(제한), OS=커널 모드(전권). 둘 사이 벽이 보호의 토대.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--hot)">Step 01 — Trying to Cross</span>
+    <h2>안전한 일은 통과, 위험한 일은 차단</h2>
+    <p class="lead">유저 모드 앱이 하려는 일을 토글로 보세요. <b>안전한 일</b>(자기 메모리에서 계산)은 그냥 돼요. <b>위험한 일</b>(디스크 직접 제어·남의 메모리 읽기·CPU 독점)은 CPU가 <b>막고</b> 커널로 넘겨요(보통 그 앱을 강제 종료). 그래서 버그 있는 앱 하나가 다른 앱이나 OS를 망가뜨릴 수 없어요.</p>
+    <div class="toggles" id="actTog">
+      <button data-v="safe" class="on">안전한 일(계산)</button>
+      <button data-v="danger">위험한 일(하드웨어)</button>
+    </div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 위험한 명령은 유저 모드에서 차단·커널로 trap. 사고의 격리.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--v)">Step 02 — A Single Bit</span>
+    <h2>모드 비트 하나가 전부</h2>
+    <p class="lead">놀랍게도 이 모든 보호는 CPU 속 <b>비트 하나</b>("지금 커널이냐 유저냐")로 작동해요. 그 비트가 유저면 특권 명령이 막히고, 커널이면 허용돼요. 그리고 결정적으로 — <b>이 비트를 바꾸는 권한도 커널만</b> 가져요. 앱이 스스로 "나 이제 커널이야"라고 비트를 못 바꾸니, 벽이 무너지지 않죠. 토글로 비트 상태별 권한을 보세요.</p>
+    <div class="toggles" id="bitTog">
+      <button data-v="user" class="on">비트 = 유저</button>
+      <button data-v="kernel">비트 = 커널</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 모드 비트 = 보호의 스위치. 앱은 스스로 못 켜요(커널만) — 그래서 안전.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">CPU의 <b>모드 비트</b>가 유저/커널을 가르고, 유저 모드에선 위험한 명령이 막혀요(어기면 커널로 trap). 비트를 바꾸는 권한도 커널만 가져 벽이 견고하죠. 그렇다면 — 앱이 정말로 디스크를 읽거나 메모리를 더 받아야 할 땐(정당한 위험한 일) 어떻게 하죠? 벽을 무너뜨리지 않고 커널에 부탁하는 <b>정해진 문</b>이 있어요. 다음 챕터.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="03-into-kernel.html" style="color:var(--q);font-weight:700">CH 03 · 커널로 들어가는 세 문</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '02 · 커널/유저 모드');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: privilege wall =====
+(function(){ const W=460,H=210;
+  let inner='';
+  inner+=OS.proc(40,30,{label:'앱',state:'ready',w:60,h:34}); inner+=OS.proc(150,30,{label:'앱',state:'ready',w:60,h:34}); inner+=OS.proc(260,30,{label:'앱',state:'ready',w:60,h:34});
+  inner+=`<text x="350" y="50" font-size="9" font-family="monospace" fill="var(--q)">계산은 자유</text>`;
+  inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--v)">하드웨어 직접 제어·모든 메모리 접근</text>`;
+  document.getElementById('s0').innerHTML=OS.boundary({W,H,midY:100,inner});
+  document.getElementById('lab0').innerHTML='위는 <b style="color:var(--q)">유저 모드(앱)</b> — 제한된 권한. 아래는 <b style="color:var(--v)">커널 모드(OS)</b> — 전권. 사이의 점선이 특권의 벽.';
+})();
+
+// ===== STEP 1: safe vs dangerous =====
+(function(){ let view='safe';
+  const tog=document.getElementById('actTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=200; let inner='';
+    inner+=OS.proc(40,28,{label:'앱',state:'run',w:64,h:36});
+    if(view==='safe'){
+      inner+=OS.chip(230,46,'x = a + b (계산)',{color:'var(--good)',minW:150,h:26});
+      inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--good)">✓ 통과 — 벽을 넘지 않음</text>`;
+      document.getElementById('lab1').innerHTML='<b style="color:var(--good)">안전한 일</b>: 자기 메모리에서 계산·논리는 유저 모드에서 자유로워요. 커널을 부를 필요 없음.';
+    } else {
+      inner+=OS.chip(230,46,'디스크 직접 제어!',{color:'var(--dead)',minW:150,h:26});
+      // attempt heads DOWN toward the wall, gets blocked ON the wall line (y=100)
+      inner+=OS.arrow(230,60,230,92,{color:'var(--dead)',lw:1.8});
+      inner+=`<line x1="200" y1="100" x2="260" y2="100" stroke="var(--dead)" stroke-width="3.5"/>`;
+      inner+=`<text x="230" y="90" text-anchor="middle" font-size="15" font-weight="700" fill="var(--dead)">✕</text>`;
+      inner+=`<text x="300" y="100" font-size="11" font-family="monospace" fill="var(--dead)">벽에 막힘</text>`;
+      inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">CPU가 차단 → 커널로 trap (보통 강제 종료)</text>`;
+      document.getElementById('lab1').innerHTML='<b style="color:var(--dead)">위험한 일</b>: 하드웨어 직접 제어·남의 메모리 접근은 유저 모드에서 <b>차단</b>되고 커널로 넘어가요 — 사고가 그 앱 안에 갇혀요.';
+    }
+    document.getElementById('s1').innerHTML=OS.boundary({W,H,midY:100,inner});
+  }
+  render();
+})();
+
+// ===== STEP 2: the bit =====
+(function(){ let view='user';
+  const tog=document.getElementById('bitTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--v)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=200; const kernel=view==='kernel'; let s='';
+    s+=`<text x="${W/2}" y="30" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--muted)">CPU 모드 비트 = <tspan fill="${kernel?'var(--v)':'var(--q)'}" font-weight="700">${kernel?'커널':'유저'}</tspan></text>`;
+    const checks=[['평범한 계산',true,true],['시스템콜로 부탁',true,true],['하드웨어 직접 제어',false,true],['모든 메모리 접근',false,true],['모드 비트 바꾸기',false,true]];
+    checks.forEach((c,i)=>{ const y=54+i*26; const allowed=kernel?c[2]:c[1];
+      s+=`<text x="60" y="${y+4}" font-size="10.5" font-family="'Pretendard'" fill="var(--ink)">${c[0]}</text>`;
+      s+=`<text x="${W-60}" y="${y+4}" text-anchor="end" font-size="12" font-family="monospace" fill="${allowed?'var(--good)':'var(--dead)'}">${allowed?'✓ 허용':'✕ 금지'}</text>`;
+    });
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'모드 비트');
+    document.getElementById('lab2').innerHTML = kernel
+      ? '<b style="color:var(--v)">커널 모드</b>: 전부 허용. OS만 여기 들어와요.'
+      : '<b style="color:var(--q)">유저 모드</b>: 계산·시스템콜은 OK, 하드웨어 직접·남의 메모리·<b>비트 변경은 금지</b>. 앱이 스스로 승격 못 해 벽이 견고.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="24" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">모드 비트 = 보호의 스위치</text>`;
+  const rows=[['두 모드','유저(앱·제한) / 커널(OS·전권)','var(--q)'],['견고함','비트 변경도 커널만 → 앱이 스스로 승격 불가','var(--v)']];
+  rows.forEach((r,i)=>{ const y=44+i*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9.5" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='정당하게 커널에 부탁하는 문은? — 다음, 커널로 들어가는 세 문.';
+})();
+</script>
+</body>
+</html>

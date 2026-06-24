@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · 한 CPU로 여럿을 — 문맥 전환 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--good)">PART B · 프로세스와 스케줄링 — CH 06</div>
+    <h1>한 CPU로 여럿을 — 문맥 전환</h1>
+    <p class="intro">CPU가 하나여도 여러 프로그램이 <b>동시에</b> 도는 듯 보이는 건, OS가 눈 깜짝할 새 CPU의 주인을 <b>바꿔치기</b>하기 때문이에요. A의 진행 상태를 <b>PCB에 저장</b>하고 B의 상태를 <b>복원</b>하는 이 일이 <b>문맥 전환</b>이죠. A가 CPU를 안 내놓으면? <b>타이머 인터럽트</b>(CH03)가 OS를 깨워 강제로 끼어들어요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 빠른 교대</button>
+    <button data-s="1">01 · 저장하고 복원</button>
+    <button data-s="2">02 · 타이머가 깨운다</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--good)">Step 00 — Rapid Turn-Taking</span>
+    <h2>너무 빨라서 동시처럼 보여요</h2>
+    <p class="lead">CPU 위에 올라갈 수 있는 건 한 순간에 하나뿐. 하지만 OS가 A→B→C→A… 를 사람이 못 느낄 만큼 빠르게 돌려가면, 우리 눈엔 셋이 <b>동시에</b> 도는 것처럼 보여요. 슬라이더로 교대 속도를 바꿔 보세요 — 느리면 한 번에 하나씩 보이지만, 빨라지면 "다 같이 도는" 착시가 생겨요.</p>
+    <div class="ctl">
+      <label class="note">교대 속도 <input type="range" id="sp0" min="1" max="10" value="6" style="vertical-align:middle"></label>
+      <span class="note" id="sp0v"></span>
+    </div>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 빠른 교대 = 동시성 착시. 실제론 늘 한 번에 하나.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Save and Restore</span>
+    <h2>바꿔치기의 한 순간</h2>
+    <p class="lead">A에서 B로 넘기는 한 번을 단계로 따라가요. ① 지금 A의 진행 상태(레지스터·다음 실행 위치)를 <b>A의 PCB에 저장</b>, ② <b>B의 PCB에서 상태를 복원</b>, ③ B가 멈췄던 그 지점부터 이어 실행. 이 저장·복원 덕에 B는 자기가 멈춘 적 없는 듯 매끄럽게 이어가요. 다만 이 전환 자체에도 약간의 시간이 들어요(공짜가 아님).</p>
+    <div class="ctl" id="play1"></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ A 상태 저장 → B 상태 복원 → B 이어가기. PCB가 "이어 돌리기"를 가능케 함.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — The Timer Wakes the OS</span>
+    <h2>안 내놓으면 강제로 끼어들어요</h2>
+    <p class="lead">문제: 실행 중인 프로세스는 CPU를 쥐고 있어요. 자발적으로 안 내놓으면 OS는 어떻게 끼어들죠? 답은 <b>타이머 인터럽트</b> — CH03에서 본 "하드웨어가 끼어드는 문"이에요. OS가 미리 타이머를 걸어두면, 일정 시간마다 하드웨어가 인터럽트를 일으켜 <b>강제로 커널로 진입</b>해요. 그제서야 OS가 "이제 다른 프로세스 차례"라고 결정할 수 있죠. 토글로 비교해 보세요.</p>
+    <div class="toggles" id="modeTog">
+      <button data-v="coop" class="on">타이머 없으면</button>
+      <button data-v="timer">타이머 있으면</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 타이머 인터럽트 = OS가 CPU를 되찾는 열쇠. 강제 선점의 토대.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">한 CPU로 여럿을 돌리는 비결은 <b>빠른 교대 + 문맥 전환</b>(상태 저장·복원)이에요. 그리고 프로세스가 CPU를 독점 못 하도록 <b>타이머 인터럽트</b>가 주기적으로 OS를 깨워 선점하죠. 이제 OS는 "끼어들 수" 있어요. 하지만 끼어든 뒤 <b>누구에게</b> CPU를 줄지는 아직 안 정했어요. 그 선택 규칙이 바로 <b>스케줄링</b>이에요. 다음 두 챕터에서.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="07-scheduling-1.html" style="color:var(--q);font-weight:700">CH 07 · 누구를 먼저? 스케줄링 ①</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '06 · 문맥 전환');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0: rapid switching =====
+(function(){ const procs=['A','B','C']; let cur=0, timer=null, speed=6;
+  const sp=document.getElementById('sp0'), spv=document.getElementById('sp0v');
+  function render(){ const W=460,H=160; let s='';
+    // CPU
+    s+=`<rect x="${W/2-50}" y="20" width="100" height="40" rx="9" fill="var(--good)" opacity="0.9" stroke="var(--good)" stroke-width="1.6"/><text x="${W/2}" y="45" text-anchor="middle" font-size="12" font-family="monospace" font-weight="700" fill="#0b0e14">CPU</text>`;
+    procs.forEach((p,i)=>{ const x=70+i*150; const on=i===cur;
+      s+=OS.proc(x,100,{label:p,state:on?'run':'ready',w:80,h:40});
+      if(on) s+=OS.arrow(x+40,98,W/2,62,{color:'var(--good)',lw:1.6});
+    });
+    document.getElementById('s0').innerHTML=OS.svg(W,H,s,'빠른 교대');
+  }
+  function tick(){ cur=(cur+1)%procs.length; render(); }
+  function restart(){ if(timer) clearInterval(timer); const ms=Math.round(1100-speed*100); timer=setInterval(tick,ms); spv.textContent=(speed>=8?'아주 빠름 — 동시처럼 보임':speed>=4?'보통':'느림 — 하나씩 보임'); }
+  sp.addEventListener('input',()=>{ speed=+sp.value; restart(); });
+  render(); restart();
+  document.getElementById('lab0').innerHTML='CPU 위엔 한 순간 하나뿐이지만, 교대가 빨라지면 셋이 <b style="color:var(--good)">동시에 도는 듯</b> 보여요. 이게 멀티태스킹의 착시.';
+})();
+
+// ===== STEP 1: save/restore =====
+(function(){ const steps=[
+    {t:'A 실행 중', d:'A가 CPU를 쓰는 중', hi:'A', save:false, rest:false},
+    {t:'① A 상태 저장', d:'A의 레지스터·다음 위치를 A의 PCB에 보관', hi:null, save:true, rest:false},
+    {t:'② B 상태 복원', d:'B의 PCB에서 멈췄던 상태를 꺼내 옴', hi:null, save:false, rest:true},
+    {t:'③ B 실행', d:'B가 멈춘 지점부터 매끄럽게 이어감', hi:'B', save:false, rest:false}
+  ];
+  let i=0;
+  const play=document.getElementById('play1');
+  play.innerHTML=`<button class="btn" id="prev1">◀ 이전</button><button class="btn" id="next1">다음 ▶</button><span class="note" id="cnt1" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=200; const st=steps[i]; let s='';
+    // CPU center
+    s+=`<rect x="${W/2-44}" y="84" width="88" height="36" rx="8" fill="${st.hi?'var(--good)':'var(--panel)'}" opacity="${st.hi?0.9:1}" stroke="var(--good)" stroke-width="1.5"/><text x="${W/2}" y="107" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="${st.hi?'#0b0e14':'var(--good)'}">CPU${st.hi?' · '+st.hi:''}</text>`;
+    // A pcb left, B pcb right
+    s+=OS.pcb(20,40,{pid:'A',rows:[['상태',st.hi==='A'?'실행':'준비'],['저장된 위치',st.save?'방금 저장':'0x10']]});
+    s+=OS.pcb(W-150,40,{pid:'B',rows:[['상태',st.hi==='B'?'실행':'준비'],['저장된 위치',st.rest?'복원 중':'0x88']]});
+    if(st.save) s+=OS.arrow(W/2-44,100,150,80,{color:'var(--q)',lw:1.5,dash:'4 3'});
+    if(st.rest) s+=OS.arrow(W-150,80,W/2+44,100,{color:'var(--hot)',lw:1.5,dash:'4 3'});
+    if(st.hi==='B') s+=OS.arrow(W-150,80,W/2+44,100,{color:'var(--good)',lw:1.5});
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'문맥 전환');
+    document.getElementById('cnt1').textContent=`${i+1} / ${steps.length}`;
+    document.getElementById('lab1').innerHTML=`<b style="color:var(--q)">${st.t}</b> — ${st.d}`;
+  }
+  document.getElementById('next1').onclick=()=>{ i=(i+1)%steps.length; render(); };
+  document.getElementById('prev1').onclick=()=>{ i=(i-1+steps.length)%steps.length; render(); };
+  render();
+})();
+
+// ===== STEP 2: timer interrupt =====
+(function(){ let view='coop';
+  const tog=document.getElementById('modeTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=200; let inner='';
+    inner+=OS.proc(40,30,{label:'욕심쟁이 앱',state:'run',w:110,h:36});
+    if(view==='coop'){
+      inner+=`<text x="${W/2+40}" y="50" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">CPU를 안 내놓음 → OS 못 끼어듦</text>`;
+      inner+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">다른 프로세스는 영영 굶음</text>`;
+      document.getElementById('lab2').innerHTML='타이머가 없으면, CPU를 안 내놓는 앱을 OS가 멈출 길이 없어요. 한 앱이 시스템을 독점.';
+    } else {
+      inner+=OS.interrupt(W/2+60,40,W/2+60,118,{color:'var(--dead)',label:'타이머!'});
+      inner+=`<text x="${W/2+60}" y="34" text-anchor="middle" font-size="9" font-family="monospace" fill="var(--dead)">⏱ 주기적 인터럽트</text>`;
+      inner+=`<rect x="${W/2+24}" y="120" width="72" height="28" rx="6" fill="var(--panel)" stroke="var(--v)" stroke-width="1.4"/><text x="${W/2+60}" y="138" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--v)">OS 깨어남</text>`;
+      document.getElementById('lab2').innerHTML='타이머 인터럽트가 주기적으로 <b style="color:var(--v)">커널로 강제 진입</b>시켜 OS를 깨워요. 그제서야 "다음 차례"를 정할 수 있죠 — <b>CH03의 인터럽트</b>가 여기서 일해요.';
+    }
+    document.getElementById('s2').innerHTML=OS.boundary({W,H,midY:104,inner});
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">빠른 교대 + 타이머 선점</text>`;
+  const rows=[['문맥 전환','A 상태 저장 → B 상태 복원 → B 이어감','var(--q)'],['선점','타이머 인터럽트로 OS가 CPU를 되찾음','var(--dead)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='끼어든 뒤 누구에게 CPU를 줄까 — 다음, 스케줄링.';
+})();
+</script>
+</body>
+</html>

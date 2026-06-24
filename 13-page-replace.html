@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13 · 누구를 내보낼까 — 페이지 교체 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--pink)">PART C · 메모리의 마법 — CH 13</div>
+    <h1>누구를 내보낼까 — 페이지 교체</h1>
+    <p class="intro">CH12에서 폴트는 새 페이지가 <b>들어오는</b> 사건이었죠. 그런데 물리 프레임이 꽉 찼다면, 새 페이지를 들이려고 기존 페이지 하나를 디스크로 <b>내보내야</b> 해요. 누구를 내보낼지가 <b>교체 정책</b>이에요. 이상적인 답은 "<b>앞으로 가장 늦게 쓸 것</b>"이지만 미래는 모르니, 현실은 "<b>가장 오래 안 쓴 것</b>"(LRU)으로 미래를 추측해요. 잘못 고르면 방금 내보낸 걸 또 불러들이는 악순환 — <b>스래싱</b> — 에 빠져요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 자리가 없다</button>
+    <button data-s="1">01 · 세 가지 고르는 법</button>
+    <button data-s="2">02 · 스래싱</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--pink)">Step 00 — No Free Frame</span>
+    <h2>꽉 찼는데 새 페이지가 필요해</h2>
+    <p class="lead">CH12의 폴트가 났는데, 가져온 페이지를 둘 <b>빈 프레임이 없어요</b>. 그럼 지금 들어 있는 페이지 중 <b>하나를 골라 디스크로 내보내고</b>(필요하면 변경분을 디스크에 기록), 그 빈자리에 새 페이지를 넣어요. 문제는 <b>누구를 내보내느냐</b> — 잘 고르면 그 페이지를 한동안 안 찾아 폴트가 드물지만, 잘못 고르면 곧바로 다시 필요해져 또 폴트가 나죠.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 프레임이 꽉 차면, 새 페이지 = 기존 하나를 내보낸 자리. 선택이 성능을 좌우.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Three Ways to Choose</span>
+    <h2>먼저 온 것 · 오래 안 쓴 것 · 이상</h2>
+    <p class="lead">같은 접근 순서에 세 정책을 돌려 폴트 수를 비교해요. <b>FIFO</b>(먼저 들어온 것 내보냄): 단순하지만 자주 쓰는 페이지도 오래됐다고 내보내 손해 볼 수 있어요. <b>LRU</b>(가장 오래 안 쓴 것): "최근 안 썼으면 앞으로도 덜 쓸 것"이라는 지역성 추측 — 보통 잘 맞아요. <b>최적(OPT)</b>: 앞으로 가장 늦게 쓸 것을 내보냄 — 미래를 알아야 해 현실엔 없지만, 비교 기준이 돼요.</p>
+    <div class="toggles" id="polTog">
+      <button data-v="fifo" class="on">FIFO(먼저 온 것)</button>
+      <button data-v="lru">LRU(오래 안 쓴 것)</button>
+      <button data-v="opt">최적(미래)</button>
+    </div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ FIFO 단순 / LRU 지역성 추측(현실적) / OPT 이상(비교용). 정책이 폴트 수를 바꿈.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--hot)">Step 02 — Thrashing</span>
+    <h2>일은 안 하고 페이지만 나르기</h2>
+    <p class="lead">프레임이 <b>너무 적은데</b> 프로세스가 쓰려는 페이지는 많으면? 방금 내보낸 페이지를 곧바로 다시 불러오고, 그걸 넣으려 또 다른 걸 내보내고… 끝없이 디스크만 들락거려요. CPU는 거의 노는데 디스크만 바쁜 이 상태가 <b>스래싱</b>이에요. 슬라이더로 프레임 수를 줄여 폴트가 폭증하는 절벽을 보세요. 해법은 단순 — 메모리를 늘리거나, 동시에 도는 프로세스를 줄여 한 명당 프레임을 충분히 주는 것.</p>
+    <div class="ctl">
+      <label class="note">프레임 수 <input type="range" id="fr2" min="1" max="6" value="2" style="vertical-align:middle"></label>
+      <span class="note" id="fr2v"></span>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 프레임이 작업집합보다 적으면 스래싱. 프레임을 늘리거나 프로세스를 줄여 탈출.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--good)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead">프레임이 꽉 차면 새 페이지를 들이려 하나를 <b>내보내야</b> 하고, 그 선택이 교체 정책이에요. 이상은 OPT(미래의 가장 늦게 쓸 것)지만 현실은 <b>LRU</b>로 지역성을 추측하죠. 프레임이 작업에 비해 너무 적으면 <b>스래싱</b>으로 디스크만 바빠져요. 이로써 메모리 PART를 마쳐요 — <b>가상 메모리</b>는 격리(항상)와 큰 메모리 환상(필요 시)을 페이지 테이블·TLB·요구 페이징·교체로 함께 실현해요. 다음 PART는 끈 뒤에도 남는 <b>파일과 저장</b>으로.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 PART D → <a href="14-file-inode.html" style="color:var(--q);font-weight:700">CH 14 · 파일은 어떻게 저장되나</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '13 · 페이지 교체');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=190; let s='';
+  s+=OS.frames(40,50,[{by:'P0',color:'var(--blue)'},{by:'P1',color:'var(--blue)'},{by:'P2',color:'var(--blue)'}],{cols:1,cw:80,ch:36,title:'프레임 — 꽉 참'});
+  s+=OS.chip(250,46,'새 페이지 P5 필요',{color:'var(--hot)',minW:140,h:26});
+  s+=`<text x="250" y="80" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--muted)">→ 하나를 내보내야 자리가 생김</text>`;
+  s+=OS.arrow(120,68,180,120,{color:'var(--dead)',lw:1.5});
+  s+=OS.disk(200,118,{w:90,h:46,label:'디스크로 내보냄'});
+  s+=`<text x="345" y="124" font-size="9" font-family="monospace" fill="var(--good)">새 P5 들어옴</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'자리 없음');
+  document.getElementById('lab0').innerHTML='프레임이 꽉 찼으니, P5를 넣으려면 P0~P2 중 <b style="color:var(--dead)">하나를 디스크로</b> 내보내야 해요. 누구를 고르냐가 관건.';
+})();
+
+// ===== STEP 1: FIFO / LRU / OPT =====
+(function(){ let view='fifo';
+  const SEQ=[1,2,3,1,4,2,5,1,2,3];
+  const CAP=3;
+  function simFIFO(){ let fr=[],q=[],faults=0; SEQ.forEach(p=>{ if(!fr.includes(p)){ faults++; if(fr.length>=CAP){ const ev=q.shift(); fr=fr.filter(x=>x!==ev); } fr.push(p); q.push(p);} }); return faults; }
+  function simLRU(){ let fr=[],used=[],faults=0; SEQ.forEach(p=>{ const i=fr.indexOf(p); if(i<0){ faults++; if(fr.length>=CAP){ // evict least-recently-used
+        let lru=fr[0],lt=used[0]; fr.forEach((x,k)=>{ if(used[k]<lt){lt=used[k];lru=x;} }); const idx=fr.indexOf(lru); fr.splice(idx,1); used.splice(idx,1);} fr.push(p); used.push(0);} ; fr.forEach((x,k)=>used[k]++); if(i>=0) used[i]=0; }); return faults; }
+  function simOPT(){ let fr=[],faults=0; SEQ.forEach((p,t)=>{ if(!fr.includes(p)){ faults++; if(fr.length>=CAP){ // evict the one used farthest in future
+        let far=-1,ev=fr[0]; fr.forEach(x=>{ let nxt=SEQ.slice(t+1).indexOf(x); if(nxt<0) nxt=Infinity; if(nxt>far){far=nxt;ev=x;} }); fr=fr.filter(x=>x!==ev);} fr.push(p);} }); return faults; }
+  const tog=document.getElementById('polTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=170; const f={fifo:simFIFO(),lru:simLRU(),opt:simOPT()}[view];
+    let s=`<text x="${W/2}" y="28" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--muted)">접근 순서: ${SEQ.join(' ')}  (프레임 ${CAP}개)</text>`;
+    const names={fifo:'FIFO',lru:'LRU',opt:'최적(OPT)'};
+    s+=`<text x="${W/2}" y="86" text-anchor="middle" font-size="14" font-family="monospace" font-weight="700" fill="var(--pink)">${names[view]}</text>`;
+    s+=`<text x="${W/2}" y="120" text-anchor="middle" font-size="20" font-family="monospace" font-weight="700" fill="${view==='opt'?'var(--good)':'var(--hot)'}">폴트 ${f}회</text>`;
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'교체 정책');
+    const txt={fifo:'<b>FIFO</b>: 먼저 들어온 걸 내보내요. 단순하지만 자주 쓰는 옛 페이지도 내보낼 수 있어 폴트 '+f+'회.',
+      lru:'<b style="color:var(--q)">LRU</b>: 가장 오래 안 쓴 걸 내보내요. 지역성 추측이 잘 맞아 보통 FIFO보다 유리 — 폴트 '+f+'회.',
+      opt:'<b style="color:var(--good)">최적</b>: 앞으로 가장 늦게 쓸 걸 내보내요. 미래를 알아야 해 현실엔 없지만, 폴트 '+f+'회로 하한선(비교 기준).'};
+    document.getElementById('lab1').innerHTML=txt[view];
+  }
+  render();
+})();
+
+// ===== STEP 2: thrashing =====
+(function(){ const fr2=document.getElementById('fr2'), fr2v=document.getElementById('fr2v');
+  // working set ~5 distinct pages cycled
+  const SEQ=[1,2,3,4,5,1,2,3,4,5,1,2,3,4,5];
+  function faultsFor(cap){ let fr=[],q=[],f=0; SEQ.forEach(p=>{ if(!fr.includes(p)){ f++; if(fr.length>=cap){ const ev=q.shift(); fr=fr.filter(x=>x!==ev);} fr.push(p); q.push(p);} }); return f; }
+  function render(){ const cap=+fr2.value; const f=faultsFor(cap); const W=460,H=170;
+    // bar of fault rate
+    const maxF=SEQ.length;
+    let s=`<text x="${W/2}" y="28" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--muted)">작업집합 ≈ 5 페이지 / 프레임 ${cap}개</text>`;
+    const barW=300, bx=(W-barW)/2; const ratio=f/maxF;
+    s+=`<rect x="${bx}" y="70" width="${barW}" height="28" rx="6" fill="var(--panel)" stroke="var(--line)"/>`;
+    s+=`<rect x="${bx}" y="70" width="${(barW*ratio).toFixed(0)}" height="28" rx="6" fill="${cap>=5?'var(--good)':(cap<=2?'var(--dead)':'var(--hot)')}" opacity="0.9"/>`;
+    s+=`<text x="${W/2}" y="128" text-anchor="middle" font-size="14" font-family="monospace" font-weight="700" fill="${cap>=5?'var(--good)':(cap<=2?'var(--dead)':'var(--hot)')}">폴트 ${f} / ${maxF}회</text>`;
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'스래싱');
+    fr2v.textContent = cap>=5?'충분 — 거의 폴트 없음':cap<=2?'부족 — 스래싱!':'아슬아슬';
+    document.getElementById('lab2').innerHTML = cap<=2
+      ? '프레임이 작업집합(5)보다 한참 적어요. 넣자마자 내보내야 해 <b style="color:var(--dead)">매번 폴트 — 스래싱</b>. 디스크만 바쁘고 일은 안 됨.'
+      : cap>=5 ? '프레임이 작업집합을 담을 만큼 충분 → 첫 적재 뒤엔 <b style="color:var(--good)">폴트가 거의 없어요</b>.'
+      : '경계 부근 — 조금만 모자라도 폴트가 확 늘어요. 절벽이 가파름.';
+  }
+  fr2.addEventListener('input',render); render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=150;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">메모리 PART 마무리</text>`;
+  const rows=[['교체','꽉 차면 하나 내보냄 → 선택이 정책','var(--pink)'],['정책','이상=OPT / 현실=LRU(지역성 추측)','var(--q)'],['스래싱','프레임 < 작업집합 → 디스크만 바쁨','var(--dead)']];
+  rows.forEach((r,idx)=>{ const y=40+idx*32; s+=`<rect x="20" y="${y}" width="${W-40}" height="27" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+18}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+18}" fill="var(--ink)" font-size="8.6" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='끈 뒤에도 남는 데이터는? — 다음 PART, 파일과 저장.';
+})();
+</script>
+</body>
+</html>

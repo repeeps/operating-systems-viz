@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · 페이지와 페이지 테이블 — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--pink)">PART C · 메모리의 마법 — CH 10</div>
+    <h1>페이지와 페이지 테이블</h1>
+    <p class="intro">가상→물리 연결을 어떻게 관리할까요? 메모리를 같은 크기의 칸 — <b>페이지</b>(가상)와 <b>프레임</b>(물리) — 으로 쪼개, "페이지 3번 → 프레임 7번"처럼 <b>칸 단위로</b> 연결해요. 이 목록이 <b>페이지 테이블</b>(프로세스마다 따로)이죠. 흩어져 있어도 이어진 듯 쓰고, 칸마다 <b>권한</b>(읽기·쓰기·실행)도 붙어요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 칸으로 쪼개기</button>
+    <button data-s="1">01 · 연결표 따라가기</button>
+    <button data-s="2">02 · 흩어져도 괜찮아</button>
+    <button data-s="3">03 · 칸마다 권한</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--pink)">Step 00 — Chop into Pages</span>
+    <h2>페이지와 프레임</h2>
+    <p class="lead">가상 메모리를 똑같은 크기의 칸으로 자른 게 <b>페이지</b>, 물리 메모리를 같은 크기로 자른 게 <b>프레임</b>이에요. 둘은 크기가 같아 딱 맞게 끼워지죠. 이제 OS는 "주소 100번지 → 어디" 같은 번거로운 매핑 대신 "<b>페이지 단위</b>"로만 연결하면 돼요. 표가 훨씬 짧아지고 관리가 쉬워져요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 페이지(가상 칸) = 프레임(물리 칸), 크기 동일. 연결은 칸 단위로.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — Follow the Table</span>
+    <h2>주소 하나를 번역해 보기</h2>
+    <p class="lead">프로세스가 어떤 가상 주소를 읽으려 해요. OS(정확히는 하드웨어)가 그 주소가 속한 <b>페이지 번호</b>를 떼어, 페이지 테이블에서 짝인 <b>프레임 번호</b>를 찾아요. 칸 안에서의 위치(나머지)는 그대로 두고요. 버튼으로 다른 가상 페이지를 골라 어느 프레임으로 연결되는지 따라가 보세요. 이 표 조회가 모든 메모리 접근마다 일어나요.</p>
+    <div class="ctl" id="play1"></div>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ 가상 페이지 번호 → (표 조회) → 물리 프레임 번호. 접근마다 매번.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--good)">Step 02 — Scattered Is Fine</span>
+    <h2>물리적으로 흩어져도 OK</h2>
+    <p class="lead">페이지 테이블의 진짜 위력: 가상에서 <b>이어진</b> 페이지들이 물리에선 <b>아무 데나 흩어져</b> 있어도 괜찮아요. 표가 각각을 올바른 프레임으로 연결하니, 프로세스 눈엔 여전히 매끈하게 이어진 메모리로 보이죠. 빈 프레임이 띄엄띄엄 있어도 새 페이지를 꽂을 수 있어 — 메모리 낭비(외부 단편화)가 사라져요.</p>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 가상은 연속, 물리는 흩어짐. 표가 이어 주니 빈 칸을 빠짐없이 활용.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--hot)">Step 03 — Permission Bits</span>
+    <h2>칸마다 권한이 붙어요</h2>
+    <p class="lead">페이지 테이블의 각 줄엔 프레임 번호만 있는 게 아니라 <b>권한 표시</b>도 있어요 — 읽기(r)·쓰기(w)·실행(x). 예컨대 코드 페이지는 <b>읽기·실행만</b> 되고 쓰기는 막아(스스로를 못 고치게), 데이터 페이지는 읽기·쓰기는 되지만 실행은 막죠(데이터를 코드로 못 돌리게). 권한을 어기면 CH03의 <b>예외/폴트</b>가 터져 OS가 개입해요. 토글로 위반 상황을 보세요.</p>
+    <div class="toggles" id="permTog">
+      <button data-v="ok" class="on">허용된 접근</button>
+      <button data-v="bad">권한 위반</button>
+    </div>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="11-tlb.html" style="color:var(--q);font-weight:700">CH 11 · 번역을 빠르게 — TLB</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '10 · 페이지와 페이지 테이블');
+VZ.setupStepper();
+const OS=VZ.OS;
+const MAP=[{v:0,f:5},{v:1,f:2},{v:2,f:7},{v:3,f:1}];
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=200; let s='';
+  s+=`<text x="110" y="28" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--pink)">가상 메모리 (페이지)</text>`;
+  ['P0','P1','P2','P3'].forEach((p,i)=>{ s+=`<rect x="60" y="${44+i*32}" width="100" height="28" rx="4" fill="var(--panel)" stroke="var(--pink)" stroke-width="1.2"/><text x="110" y="${62+i*32}" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--pink)">${p}</text>`; });
+  s+=`<text x="350" y="28" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--blue)">물리 메모리 (프레임)</text>`;
+  ['F0','F1','F2','F3','F4','F5'].forEach((f,i)=>{ s+=`<rect x="300" y="${40+i*24}" width="100" height="20" rx="4" fill="var(--panel)" stroke="var(--blue)" stroke-width="1.1"/><text x="350" y="${54+i*24}" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--blue)">${f}</text>`; });
+  s+=`<text x="${W/2}" y="195" text-anchor="middle" font-size="9.5" font-family="monospace" fill="var(--muted)">같은 크기 칸 — 페이지를 프레임에 딱 끼움</text>`;
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'페이지와 프레임');
+  document.getElementById('lab0').innerHTML='가상은 <b style="color:var(--pink)">페이지</b>, 물리는 <b style="color:var(--blue)">프레임</b>으로 똑같이 쪼개요. 크기가 같아 어느 페이지든 어느 빈 프레임에나 끼울 수 있죠.';
+})();
+
+// ===== STEP 1: translate =====
+(function(){ let sel=0;
+  const play=document.getElementById('play1');
+  play.innerHTML=`<button class="btn" id="prev1">◀</button><button class="btn" id="next1">다른 페이지 ▶</button><span class="note" id="cnt1" style="margin-left:8px"></span>`;
+  function render(){ const W=460,H=210; const m=MAP[sel]; let s='';
+    // virtual page chosen
+    s+=`<text x="70" y="28" font-size="9.5" font-family="monospace" fill="var(--pink)">가상 주소</text>`;
+    s+=OS.chip(80,50,'페이지 '+m.v,{color:'var(--pink)',minW:80,h:26});
+    s+=OS.arrow(120,50,180,50,{color:'var(--q)',lw:1.6});
+    // page table
+    s+=OS.pageTable(190,24,MAP.map(x=>({v:x.v,f:x.f})),{hl:sel,title:'페이지 테이블',w:140});
+    // result frame
+    s+=OS.arrow(330,40+sel*22,400,160,{color:'var(--good)',lw:1.6});
+    s+=OS.chip(410,170,'프레임 '+m.f,{color:'var(--good)',minW:80,h:26});
+    document.getElementById('s1').innerHTML=OS.svg(W,H,s,'번역');
+    document.getElementById('cnt1').textContent='가상 페이지 '+m.v+' → 프레임 '+m.f;
+    document.getElementById('lab1').innerHTML='가상 페이지 <b style="color:var(--pink)">'+m.v+'</b>의 줄을 찾으니 물리 프레임 <b style="color:var(--good)">'+m.f+'</b>. 모든 메모리 접근이 이 표 조회를 거쳐요.';
+  }
+  document.getElementById('next1').onclick=()=>{ sel=(sel+1)%MAP.length; render(); };
+  document.getElementById('prev1').onclick=()=>{ sel=(sel-1+MAP.length)%MAP.length; render(); };
+  render();
+})();
+
+// ===== STEP 2: scattered =====
+(function(){ const W=460,H=210; let s='';
+  // virtual contiguous
+  s+=`<text x="80" y="28" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--pink)">가상 (연속)</text>`;
+  ['P0','P1','P2','P3'].forEach((p,i)=>{ s+=`<rect x="40" y="${40+i*36}" width="80" height="30" rx="4" fill="var(--pink)" opacity="0.85" stroke="var(--pink)"/><text x="80" y="${60+i*36}" text-anchor="middle" font-size="11" font-family="monospace" font-weight="700" fill="#0b0e14">${p}</text>`; });
+  // physical scattered
+  const cells=[{by:'P1',color:'var(--pink)'},{by:null},{by:'P3',color:'var(--pink)'},{by:'P0',color:'var(--pink)'},{by:null},{by:'P2',color:'var(--pink)'}];
+  s+=OS.frames(280,40,cells,{cols:2,cw:70,ch:34,title:'물리 (흩어짐)'});
+  // arrows
+  s+=OS.arrow(120,55,278,150,{color:'var(--q)',lw:1.1});  // P0->F3
+  s+=OS.arrow(120,91,278,40,{color:'var(--q)',lw:1.1});   // P1->F0
+  s+=OS.arrow(120,127,350,150,{color:'var(--q)',lw:1.1}); // P2->F5
+  s+=OS.arrow(120,163,350,40,{color:'var(--q)',lw:1.1});  // P3->F2
+  document.getElementById('s2').innerHTML=OS.svg(W,H,s,'흩어진 물리');
+  document.getElementById('lab2').innerHTML='가상에선 P0~P3가 쭉 이어졌지만, 물리에선 빈 칸 사이사이에 <b style="color:var(--pink)">흩어져</b> 들어가요. 표가 이어 주니 프로세스는 눈치 못 채고, 빈 칸도 낭비 없이 써요.';
+})();
+
+// ===== STEP 3: permission bits =====
+(function(){ let view='ok';
+  const tog=document.getElementById('permTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=200; let s='';
+    const rows=[['코드 페이지','r-x','읽기·실행 (쓰기 금지)','var(--v)'],['데이터 페이지','rw-','읽기·쓰기 (실행 금지)','var(--q)']];
+    rows.forEach((r,i)=>{ const y=30+i*44;
+      s+=`<rect x="40" y="${y}" width="${W-80}" height="36" rx="7" fill="var(--panel)" stroke="${r[3]}" stroke-width="1.2"/>`;
+      s+=`<text x="56" y="${y+22}" font-size="11" font-family="'Pretendard'" font-weight="700" fill="${r[3]}">${r[0]}</text>`;
+      s+=`<text x="200" y="${y+22}" font-size="13" font-family="monospace" font-weight="700" fill="${r[3]}">${r[1]}</text>`;
+      s+=`<text x="${W-56}" y="${y+22}" text-anchor="end" font-size="9.5" font-family="monospace" fill="var(--muted)">${r[2]}</text>`;
+    });
+    if(view==='ok'){
+      s+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--good)">✓ 코드를 실행 / 데이터를 씀 → 권한 일치, 통과</text>`;
+      document.getElementById('lab3').innerHTML='권한에 맞는 접근(코드 실행·데이터 쓰기)은 그냥 통과해요.';
+    } else {
+      s+=`<text x="${W/2}" y="148" text-anchor="middle" font-size="11" font-family="monospace" fill="var(--dead)">✕ 코드 페이지에 쓰기 시도</text>`;
+      s+=`<text x="${W/2}" y="166" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--dead)">→ 예외/폴트 발생 → OS 개입 (CH03)</text>`;
+      document.getElementById('lab3').innerHTML='코드 페이지에 쓰려 하면 <b style="color:var(--dead)">권한 위반 → 예외/폴트</b>. CH03의 그 문이 열려 OS가 막아요. 버그·공격을 메모리 단에서 차단.';
+    }
+    document.getElementById('s3').innerHTML=OS.svg(W,H,s,'권한 비트');
+  }
+  render();
+})();
+</script>
+</body>
+</html>

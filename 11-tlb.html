@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 · 번역을 빠르게 — TLB — 운영체제, 눈으로 보기</title>
+<link rel="stylesheet" href="shared/theme.css">
+<link rel="icon" type="image/svg+xml" href="shared/favicon.svg">
+<style>
+  .big{font-family:'JetBrains Mono',monospace; font-size:13.5px; color:var(--ink); margin:12px 0 6px; padding:14px 16px; border-radius:14px; background:var(--panel-2); border:1px solid var(--line); line-height:1.6;}
+  .big:empty{display:none;}
+  .ctl{display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  svg{display:block; width:100%;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .toggles button{font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+  .toggles button.on{color:#0b0e14;font-weight:700;background:var(--hot)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav"></div>
+
+  <header>
+    <div class="tag" style="color:var(--pink)">PART C · 메모리의 마법 — CH 11</div>
+    <h1>번역을 빠르게 — TLB</h1>
+    <p class="intro">CH10에서 모든 메모리 접근은 페이지 테이블 조회를 거친다고 했죠. 그런데 그 표는 메모리에 있어요 — 즉 데이터 한 번 읽으려면 표 보러 메모리 또 한 번. 번역 때문에 접근이 두 배로 느려지는 셈이에요. 해법은 <b>최근 번역 결과를 곁에 작게 캐싱</b>하는 것 — 그게 <b>TLB</b>예요. 프로그램은 같은 페이지를 연달아 쓰는 경향(<b>지역성</b>)이 강해서, 대부분의 접근이 TLB에서 즉시 해결돼요.</p>
+  </header>
+
+  <nav class="stepper" id="stepper">
+    <button data-s="0" class="active">00 · 표가 멀다</button>
+    <button data-s="1">01 · 곁에 캐시</button>
+    <button data-s="2">02 · 적중과 빗나감</button>
+    <button data-s="3">03 · 정리</button>
+  </nav>
+
+  <!-- STEP 0 -->
+  <section class="panel show" data-panel="0">
+    <span class="kicker" style="color:var(--pink)">Step 00 — The Table Is Far</span>
+    <h2>번역하느라 메모리를 두 번</h2>
+    <p class="lead">데이터를 한 번 읽으려면: ① 페이지 테이블(메모리에 있음)을 봐서 프레임을 알아내고, ② 그 프레임의 데이터를 읽어요. 메모리 접근이 <b>두 번</b>이 되는 거죠. 메모리는 CPU 기준으로 꽤 느린 편이라, 매번 두 번씩이면 프로그램 전체가 눈에 띄게 굼떠져요. 뭔가 손을 써야 해요.</p>
+    <div class="scene" id="s0"></div>
+    <p class="big" id="lab0"></p>
+    <p class="note" style="margin-top:6px">→ 번역(표 조회)+데이터 = 메모리 2회. 매 접근마다라면 너무 느려요.</p>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="panel" data-panel="1">
+    <span class="kicker" style="color:var(--q)">Step 01 — A Cache Beside the CPU</span>
+    <h2>최근 번역을 곁에 두기</h2>
+    <p class="lead"><b>TLB</b>는 CPU 바로 옆에 있는 아주 작고 빠른 표예요. 최근에 번역한 "페이지→프레임" 몇 개만 들고 있죠. 메모리 접근 때 먼저 TLB를 보고, 거기 있으면(<b>적중</b>) 느린 페이지 테이블을 건너뛰고 즉시 프레임을 알아내요. 없으면(<b>빗나감</b>) 그때만 메모리의 표를 보고, 그 결과를 TLB에 적어 둬 다음을 대비해요.</p>
+    <div class="scene" id="s1"></div>
+    <p class="big" id="lab1"></p>
+    <p class="note" style="margin-top:6px">→ TLB = CPU 곁의 작은 번역 캐시. 적중하면 느린 표를 건너뜀.</p>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="panel" data-panel="2">
+    <span class="kicker" style="color:var(--good)">Step 02 — Hit and Miss</span>
+    <h2>왜 대부분 적중할까</h2>
+    <p class="lead">TLB는 작은데 어떻게 대부분의 접근을 해결할까요? 프로그램은 <b>방금 쓴 곳 근처를 곧 또</b> 쓰는 경향이 강하거든요(반복문·배열 순회 — <b>지역성</b>). 그래서 같은 몇 페이지가 연달아 쓰여 작은 TLB로도 적중률이 높아요. 접근 패턴을 토글로 바꿔 적중률이 어떻게 달라지는지 보세요 — 한곳에 모이면 잘 맞고, 마구 흩어지면 자주 빗나가요.</p>
+    <div class="toggles" id="patTog">
+      <button data-v="local" class="on">지역성 높음(뭉침)</button>
+      <button data-v="random">지역성 낮음(흩어짐)</button>
+    </div>
+    <div class="scene" id="s2"></div>
+    <p class="big" id="lab2"></p>
+    <p class="note" style="margin-top:6px">→ 지역성이 높을수록 적중률↑. 고정된 99% 같은 숫자가 아니라, 접근 패턴이 좌우해요.</p>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" data-panel="3">
+    <span class="kicker" style="color:var(--hot)">Step 03 — Takeaways</span>
+    <h2>정리</h2>
+    <p class="lead"><b>TLB</b>는 최근 번역을 CPU 곁에 캐싱해, 번역이 데이터 접근을 두 배로 느리게 만드는 문제를 거의 없애요. 작아도 잘 듣는 이유는 <b>지역성</b> — 프로그램이 같은 페이지를 몰아 쓰기 때문이죠. 이건 책 전체에 흐르는 <b>캐싱</b>이라는 큰 패턴의 한 사례예요(자주 쓰는 걸 가깝게 둔다). 여기까진 "필요한 페이지가 물리 메모리에 <b>이미 있다</b>"고 가정했어요. 그런데 그 페이지가 아직 메모리에 없다면? 다음 챕터.</p>
+    <div class="scene" id="s3"></div>
+    <p class="big" id="lab3"></p>
+    <p class="note" style="margin-top:14px">→ 다음 → <a href="12-demand-paging.html" style="color:var(--q);font-weight:700">CH 12 · 없으면 그때 가져오기 — 요구 페이징</a></p>
+  </section>
+
+  <p class="foot">// 코드 없는 직관 입문 · <a href="index.html">목차</a></p>
+</div>
+
+<script src="shared/lib.js"></script>
+<script src="shared/lib-os.js"></script>
+<script>
+VZ.mountTopnav('#topnav', '11 · TLB');
+VZ.setupStepper();
+const OS=VZ.OS;
+
+// ===== STEP 0 =====
+(function(){ const W=460,H=180; let s='';
+  s+=OS.proc(30,70,{label:'CPU',state:'run',w:70,h:40});
+  s+=OS.arrow(100,80,200,55,{color:'var(--q)',lw:1.5});
+  s+=`<text x="150" y="50" font-size="9" font-family="monospace" fill="var(--q)">① 표 조회</text>`;
+  s+=OS.pageTable(210,30,[{v:3,f:7}],{title:'페이지 테이블 (메모리)',w:150});
+  s+=OS.arrow(100,100,200,130,{color:'var(--good)',lw:1.5});
+  s+=`<text x="150" y="148" font-size="9" font-family="monospace" fill="var(--good)">② 데이터 읽기</text>`;
+  s+=OS.frames(300,118,[{by:'데이터',color:'var(--blue)'}],{cols:1,cw:90,ch:34,title:''});
+  document.getElementById('s0').innerHTML=OS.svg(W,H,s,'느린 번역');
+  document.getElementById('lab0').innerHTML='데이터 한 번 읽기 = 표 보러 메모리 한 번 + 데이터 메모리 한 번 = <b style="color:var(--hot)">총 2회</b>. 번역이 접근을 두 배로 느리게 만들어요.';
+})();
+
+// ===== STEP 1 =====
+(function(){ const W=460,H=190; let s='';
+  s+=OS.proc(30,75,{label:'CPU',state:'run',w:60,h:40});
+  s+=OS.tlb(120,30,[{v:3,f:7},{v:8,f:2}],{hl:0,title:'TLB (곁의 작은 캐시)'});
+  s+=OS.arrow(90,85,120,55,{color:'var(--hot)',lw:1.5});
+  s+=`<text x="95" y="50" font-size="8.5" font-family="monospace" fill="var(--hot)">먼저 여기</text>`;
+  s+=`<text x="180" y="100" text-anchor="middle" font-size="10" font-family="monospace" fill="var(--good)">적중 → 즉시 프레임</text>`;
+  s+=OS.pageTable(290,30,[{v:3,f:7}],{title:'페이지 테이블(멀리·느림)',w:150});
+  s+=OS.arrow(240,55,290,55,{color:'var(--slate)',lw:1.2,dash:'4 3'});
+  s+=`<text x="265" y="48" font-size="8" font-family="monospace" fill="var(--slate)">빗나갈 때만</text>`;
+  document.getElementById('s1').innerHTML=OS.svg(W,H,s,'TLB');
+  document.getElementById('lab1').innerHTML='CPU는 먼저 <b style="color:var(--hot)">TLB</b>를 봐요. 있으면(적중) 느린 표를 건너뛰고 바로 프레임. 없을 때만 표를 보고 결과를 TLB에 적어 둬요.';
+})();
+
+// ===== STEP 2: hit rate by locality =====
+(function(){ let view='local';
+  const tog=document.getElementById('patTog');
+  tog.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; view=b.dataset.v; tog.querySelectorAll('button').forEach(x=>{const on=x.dataset.v===view;x.classList.toggle('on',on);x.style.background=on?'var(--hot)':'var(--panel-2)';x.style.color=on?'#0b0e14':'var(--muted)';}); render(); });
+  function render(){ const W=460,H=190;
+    // deterministic access sequence
+    const seq = view==='local'
+      ? [3,3,3,4,3,4,4,3,5,3,4,5,3,4]   // tight cluster
+      : [3,9,1,7,2,8,0,6,4,3,9,1,7,5];  // spread
+    const cap=3; let tlb=[]; let hits=0; let cells='';
+    seq.forEach((p,i)=>{ const hit=tlb.includes(p); if(hit) hits++; else { tlb.push(p); if(tlb.length>cap) tlb.shift(); }
+      const x=24+i*30; const col=hit?'var(--good)':'var(--dead)';
+      cells+=`<rect x="${x}" y="70" width="24" height="24" rx="4" fill="${col}" opacity="0.85"/><text x="${x+12}" y="86" text-anchor="middle" font-size="10" font-family="monospace" font-weight="700" fill="#0b0e14">${p}</text><text x="${x+12}" y="108" text-anchor="middle" font-size="8" font-family="monospace" fill="${col}">${hit?'적중':'빗나'}</text>`;
+    });
+    const rate=Math.round(hits/seq.length*100);
+    let s=`<text x="${W/2}" y="34" text-anchor="middle" font-size="10.5" font-family="monospace" fill="var(--muted)">접근한 페이지 순서 (TLB 칸 ${cap}개)</text>`;
+    s+=cells;
+    s+=`<text x="${W/2}" y="150" text-anchor="middle" font-size="13" font-family="monospace" font-weight="700" fill="${rate>=70?'var(--good)':'var(--hot)'}">적중률 약 ${rate}%</text>`;
+    document.getElementById('s2').innerHTML=OS.svg(W,H,s,'적중률');
+    document.getElementById('lab2').innerHTML = view==='local'
+      ? '같은 몇 페이지(3·4·5)를 몰아 쓰니 작은 TLB로도 <b style="color:var(--good)">적중률 '+rate+'%</b>. 이게 실제 프로그램의 보통 모습(지역성).'
+      : '접근이 마구 흩어지면 칸을 금세 밀어내 <b style="color:var(--hot)">적중률 '+rate+'%</b>로 뚝. 적중률은 고정값이 아니라 패턴이 정해요.';
+  }
+  render();
+})();
+
+// ===== STEP 3 =====
+(function(){ const W=460,H=120;
+  let s=`<text x="${W/2}" y="22" text-anchor="middle" font-size="12.5" font-family="monospace" font-weight="700" fill="var(--hot)">곁의 캐시 + 지역성</text>`;
+  const rows=[['TLB','최근 번역을 곁에 캐싱 → 느린 표 건너뜀','var(--q)'],['적중률','지역성이 높을수록↑ (고정 숫자 아님)','var(--good)']];
+  rows.forEach((r,idx)=>{ const y=44+idx*30; s+=`<rect x="20" y="${y}" width="${W-40}" height="26" rx="6" fill="var(--panel)" stroke="${r[2]}" stroke-width="1.1"/><text x="34" y="${y+17}" fill="${r[2]}" font-size="11" font-family="monospace" font-weight="700">${r[0]}</text><text x="${W-30}" y="${y+17}" fill="var(--ink)" font-size="9" font-family="monospace" text-anchor="end">${r[1]}</text>`; });
+  document.getElementById('s3').innerHTML=OS.svg(W,H,s,'정리');
+  document.getElementById('lab3').innerHTML='필요한 페이지가 아직 메모리에 없다면? — 다음, 요구 페이징.';
+})();
+</script>
+</body>
+</html>
